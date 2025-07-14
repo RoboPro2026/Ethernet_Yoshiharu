@@ -1,0 +1,7 @@
+{
+    "stm32-for-vscode.openOCDPath": false,
+    "files.associations": {
+        "main.h": "c"
+    },
+    "makefile.extensionOutputFolder": "${workspaceFolder}/.vscode/makefile-tools"
+}
