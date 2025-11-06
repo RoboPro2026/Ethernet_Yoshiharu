@@ -5272,7 +5272,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 113.792 184.15 0)
 			(effects
 				(font
@@ -5482,7 +5482,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 132.08 184.1499 0)
 			(effects
 				(font
@@ -7034,7 +7034,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_JST:JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical"
 			(at 257.81 227.33 0)
 			(effects
 				(font

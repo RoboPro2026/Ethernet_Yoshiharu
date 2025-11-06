@@ -1631,6 +1631,189 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Device:LED"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "D"
+				(at 0 2.54 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "LED"
+				(at 0 -2.54 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Light emitting diode"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Sim.Pins" "1=K 2=A"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "LED diode"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "LED* LED_SMD:* LED_THT:*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "LED_0_1"
+				(polyline
+					(pts
+						(xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 0) (xy 1.27 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 -1.27) (xy -1.27 1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "LED_1_1"
+				(pin passive line
+					(at -3.81 0 0)
+					(length 2.54)
+					(name "K"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 3.81 0 180)
+					(length 2.54)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Device:LED_ARBG"
 			(pin_names
 				(offset 0)
@@ -5009,7 +5192,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 211.836 218.694 0)
 			(effects
 				(font
@@ -5506,7 +5689,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 194.056 218.694 0)
 			(effects
 				(font
@@ -5575,7 +5758,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 216.916 218.694 0)
 			(effects
 				(font
@@ -6027,7 +6210,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 188.976 218.694 0)
 			(effects
 				(font
@@ -6096,7 +6279,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 221.996 218.694 0)
 			(effects
 				(font
@@ -6676,7 +6859,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "10u"
 			(at 240.03 71.1199 0)
 			(effects
 				(font
@@ -6794,6 +6977,72 @@
 			(project ""
 				(path "/8cdd0db5-06ad-47be-921f-3bd5b446781a"
 					(reference "U4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 254 66.04 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "68065383-3ec4-43c5-b6ac-dfc35d0367dd")
+		(property "Reference" "#PWR056"
+			(at 254 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 251.46 68.834 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 254 66.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 254 66.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 254 66.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "2089797e-bea1-4e0c-b383-5cb64fdb7883")
+		)
+		(instances
+			(project "kaniharu"
+				(path "/8cdd0db5-06ad-47be-921f-3bd5b446781a"
+					(reference "#PWR056")
 					(unit 1)
 				)
 			)
@@ -7268,6 +7517,76 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 254 54.61 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "a3104df9-c523-49d4-bda9-1c39e7370914")
+		(property "Reference" "R36"
+			(at 256.54 53.3399 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 256.54 55.8799 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder"
+			(at 252.222 54.61 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 254 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 254 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3b6ff12d-cbf8-4b5f-a154-91bf3ea1a1fa")
+		)
+		(pin "2"
+			(uuid "40b327ee-2f81-4c47-8146-f5992b95d51a")
+		)
+		(instances
+			(project "kaniharu"
+				(path "/8cdd0db5-06ad-47be-921f-3bd5b446781a"
+					(reference "R36")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+5V")
 		(at 147.828 62.23 0)
 		(mirror y)
@@ -7606,6 +7925,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+3.3V")
+		(at 254 50.8 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "b5da4d9f-5624-45e0-8086-4b9c95df5f7f")
+		(property "Reference" "#PWR020"
+			(at 254 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 254 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 254 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 254 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 254 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "20f80ef6-82dc-42c7-b7ca-09023c7cef02")
+		)
+		(instances
+			(project "kaniharu"
+				(path "/8cdd0db5-06ad-47be-921f-3bd5b446781a"
+					(reference "#PWR020")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 141.478 86.36 0)
 		(mirror y)
@@ -7805,6 +8190,85 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:LED")
+		(at 254 62.23 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c7da271b-810e-498d-ab02-8f0c2cd03054")
+		(property "Reference" "D10"
+			(at 257.81 62.5474 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "LED"
+			(at 257.81 65.0874 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
+			(at 254 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 254 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Light emitting diode"
+			(at 254 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Sim.Pins" "1=K 2=A"
+			(at 254 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "77477508-d7ec-49b2-b4a3-57a014149bfc")
+		)
+		(pin "1"
+			(uuid "1a1a31b0-4cac-4d9e-a5ee-c5e8fea629a9")
+		)
+		(instances
+			(project "kaniharu"
+				(path "/8cdd0db5-06ad-47be-921f-3bd5b446781a"
+					(reference "D10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GNDPWR")
 		(at 311.15 100.33 0)
 		(unit 1)
@@ -7889,7 +8353,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "10u"
 			(at 204.47 71.1199 0)
 			(effects
 				(font
@@ -8180,7 +8644,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 183.896 218.694 0)
 			(effects
 				(font
