@@ -1,0 +1,527 @@
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.arch armv7e-m
+   3              		.fpu fpv5-d16
+   4              		.eabi_attribute 28, 1
+   5              		.eabi_attribute 20, 1
+   6              		.eabi_attribute 21, 1
+   7              		.eabi_attribute 23, 3
+   8              		.eabi_attribute 24, 1
+   9              		.eabi_attribute 25, 1
+  10              		.eabi_attribute 26, 1
+  11              		.eabi_attribute 30, 1
+  12              		.eabi_attribute 34, 1
+  13              		.eabi_attribute 18, 4
+  14              		.file	"lwip.c"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.file 1 "LWIP/App/lwip.c"
+  19              		.section	.text.ethernet_link_status_updated,"ax",%progbits
+  20              		.align	1
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	ethernet_link_status_updated:
+  26              	.LVL0:
+  27              	.LFB176:
+   1:LWIP/App/lwip.c **** /* USER CODE BEGIN Header */
+   2:LWIP/App/lwip.c **** /**
+   3:LWIP/App/lwip.c ****  ******************************************************************************
+   4:LWIP/App/lwip.c ****  * File Name          : LWIP.c
+   5:LWIP/App/lwip.c ****  * Description        : This file provides initialization code for LWIP
+   6:LWIP/App/lwip.c ****  *                      middleWare.
+   7:LWIP/App/lwip.c ****  ******************************************************************************
+   8:LWIP/App/lwip.c ****  * @attention
+   9:LWIP/App/lwip.c ****  *
+  10:LWIP/App/lwip.c ****  * Copyright (c) 2025 STMicroelectronics.
+  11:LWIP/App/lwip.c ****  * All rights reserved.
+  12:LWIP/App/lwip.c ****  *
+  13:LWIP/App/lwip.c ****  * This software is licensed under terms that can be found in the LICENSE file
+  14:LWIP/App/lwip.c ****  * in the root directory of this software component.
+  15:LWIP/App/lwip.c ****  * If no LICENSE file comes with this software, it is provided AS-IS.
+  16:LWIP/App/lwip.c ****  *
+  17:LWIP/App/lwip.c ****  ******************************************************************************
+  18:LWIP/App/lwip.c ****  */
+  19:LWIP/App/lwip.c **** /* USER CODE END Header */
+  20:LWIP/App/lwip.c **** 
+  21:LWIP/App/lwip.c **** /* Includes ------------------------------------------------------------------*/
+  22:LWIP/App/lwip.c **** #include "lwip.h"
+  23:LWIP/App/lwip.c **** #include "lwip/init.h"
+  24:LWIP/App/lwip.c **** #include "lwip/netif.h"
+  25:LWIP/App/lwip.c **** #if defined ( __CC_ARM )  /* MDK ARM Compiler */
+  26:LWIP/App/lwip.c **** #include "lwip/sio.h"
+  27:LWIP/App/lwip.c **** #endif /* MDK ARM Compiler */
+  28:LWIP/App/lwip.c **** #include "ethernetif.h"
+  29:LWIP/App/lwip.c **** 
+  30:LWIP/App/lwip.c **** /* USER CODE BEGIN 0 */
+  31:LWIP/App/lwip.c **** 
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 2
+
+
+  32:LWIP/App/lwip.c **** /* USER CODE END 0 */
+  33:LWIP/App/lwip.c **** /* Private function prototypes -----------------------------------------------*/
+  34:LWIP/App/lwip.c **** static void ethernet_link_status_updated(struct netif *netif);
+  35:LWIP/App/lwip.c **** /* ETH Variables initialization ----------------------------------------------*/
+  36:LWIP/App/lwip.c **** void Error_Handler(void);
+  37:LWIP/App/lwip.c **** 
+  38:LWIP/App/lwip.c **** /* USER CODE BEGIN 1 */
+  39:LWIP/App/lwip.c **** 
+  40:LWIP/App/lwip.c **** /* USER CODE END 1 */
+  41:LWIP/App/lwip.c **** 
+  42:LWIP/App/lwip.c **** /* Variables Initialization */
+  43:LWIP/App/lwip.c **** struct netif gnetif;
+  44:LWIP/App/lwip.c **** ip4_addr_t ipaddr;
+  45:LWIP/App/lwip.c **** ip4_addr_t netmask;
+  46:LWIP/App/lwip.c **** ip4_addr_t gw;
+  47:LWIP/App/lwip.c **** uint8_t IP_ADDRESS[4];
+  48:LWIP/App/lwip.c **** uint8_t NETMASK_ADDRESS[4];
+  49:LWIP/App/lwip.c **** uint8_t GATEWAY_ADDRESS[4];
+  50:LWIP/App/lwip.c **** 
+  51:LWIP/App/lwip.c **** /* USER CODE BEGIN 2 */
+  52:LWIP/App/lwip.c **** 
+  53:LWIP/App/lwip.c **** /* USER CODE END 2 */
+  54:LWIP/App/lwip.c **** 
+  55:LWIP/App/lwip.c **** /**
+  56:LWIP/App/lwip.c ****   * LwIP initialization function
+  57:LWIP/App/lwip.c ****   */
+  58:LWIP/App/lwip.c **** void MX_LWIP_Init(void)
+  59:LWIP/App/lwip.c **** {
+  60:LWIP/App/lwip.c ****   /* IP addresses initialization */
+  61:LWIP/App/lwip.c ****   IP_ADDRESS[0] = 192;
+  62:LWIP/App/lwip.c ****   IP_ADDRESS[1] = 168;
+  63:LWIP/App/lwip.c ****   IP_ADDRESS[2] = 1;
+  64:LWIP/App/lwip.c ****   IP_ADDRESS[3] = 10;
+  65:LWIP/App/lwip.c ****   NETMASK_ADDRESS[0] = 255;
+  66:LWIP/App/lwip.c ****   NETMASK_ADDRESS[1] = 255;
+  67:LWIP/App/lwip.c ****   NETMASK_ADDRESS[2] = 255;
+  68:LWIP/App/lwip.c ****   NETMASK_ADDRESS[3] = 0;
+  69:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[0] = 192;
+  70:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[1] = 168;
+  71:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[2] = 1;
+  72:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[3] = 1;
+  73:LWIP/App/lwip.c **** 
+  74:LWIP/App/lwip.c **** /* USER CODE BEGIN IP_ADDRESSES */
+  75:LWIP/App/lwip.c **** /* USER CODE END IP_ADDRESSES */
+  76:LWIP/App/lwip.c **** 
+  77:LWIP/App/lwip.c ****   /* Initialize the LwIP stack with RTOS */
+  78:LWIP/App/lwip.c ****   tcpip_init( NULL, NULL );
+  79:LWIP/App/lwip.c **** 
+  80:LWIP/App/lwip.c ****   /* IP addresses initialization without DHCP (IPv4) */
+  81:LWIP/App/lwip.c ****   IP4_ADDR(&ipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2], IP_ADDRESS[3]);
+  82:LWIP/App/lwip.c ****   IP4_ADDR(&netmask, NETMASK_ADDRESS[0], NETMASK_ADDRESS[1] , NETMASK_ADDRESS[2], NETMASK_ADDRESS[3
+  83:LWIP/App/lwip.c ****   IP4_ADDR(&gw, GATEWAY_ADDRESS[0], GATEWAY_ADDRESS[1], GATEWAY_ADDRESS[2], GATEWAY_ADDRESS[3]);
+  84:LWIP/App/lwip.c **** 
+  85:LWIP/App/lwip.c ****   /* add the network interface (IPv4/IPv6) with RTOS */
+  86:LWIP/App/lwip.c ****   netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
+  87:LWIP/App/lwip.c **** 
+  88:LWIP/App/lwip.c ****   /* Registers the default network interface */
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 3
+
+
+  89:LWIP/App/lwip.c ****   netif_set_default(&gnetif);
+  90:LWIP/App/lwip.c **** 
+  91:LWIP/App/lwip.c ****   /* We must always bring the network interface up connection or not... */
+  92:LWIP/App/lwip.c ****   netif_set_up(&gnetif);
+  93:LWIP/App/lwip.c **** 
+  94:LWIP/App/lwip.c ****   /* Set the link callback function, this function is called on change of link status*/
+  95:LWIP/App/lwip.c ****   netif_set_link_callback(&gnetif, ethernet_link_status_updated);
+  96:LWIP/App/lwip.c **** 
+  97:LWIP/App/lwip.c ****   /* Create the Ethernet link handler thread */
+  98:LWIP/App/lwip.c **** /* USER CODE BEGIN H7_OS_THREAD_DEF_CREATE_CMSIS_RTOS_V1 */
+  99:LWIP/App/lwip.c ****   osThreadDef(EthLink, ethernet_link_thread, osPriorityBelowNormal, 0, 1024);
+ 100:LWIP/App/lwip.c ****   osThreadCreate(osThread(EthLink), &gnetif);
+ 101:LWIP/App/lwip.c **** /* USER CODE END H7_OS_THREAD_DEF_CREATE_CMSIS_RTOS_V1 */
+ 102:LWIP/App/lwip.c **** 
+ 103:LWIP/App/lwip.c **** /* USER CODE BEGIN 3 */
+ 104:LWIP/App/lwip.c **** 
+ 105:LWIP/App/lwip.c **** /* USER CODE END 3 */
+ 106:LWIP/App/lwip.c **** }
+ 107:LWIP/App/lwip.c **** 
+ 108:LWIP/App/lwip.c **** #ifdef USE_OBSOLETE_USER_CODE_SECTION_4
+ 109:LWIP/App/lwip.c **** /* Kept to help code migration. (See new 4_1, 4_2... sections) */
+ 110:LWIP/App/lwip.c **** /* Avoid to use this user section which will become obsolete. */
+ 111:LWIP/App/lwip.c **** /* USER CODE BEGIN 4 */
+ 112:LWIP/App/lwip.c **** /* USER CODE END 4 */
+ 113:LWIP/App/lwip.c **** #endif
+ 114:LWIP/App/lwip.c **** 
+ 115:LWIP/App/lwip.c **** /**
+ 116:LWIP/App/lwip.c ****   * @brief  Notify the User about the network interface config status
+ 117:LWIP/App/lwip.c ****   * @param  netif: the network interface
+ 118:LWIP/App/lwip.c ****   * @retval None
+ 119:LWIP/App/lwip.c ****   */
+ 120:LWIP/App/lwip.c **** static void ethernet_link_status_updated(struct netif *netif)
+ 121:LWIP/App/lwip.c **** {
+  28              		.loc 1 121 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+ 122:LWIP/App/lwip.c ****   if (netif_is_up(netif))
+  33              		.loc 1 122 3 view .LVU1
+ 123:LWIP/App/lwip.c ****   {
+ 124:LWIP/App/lwip.c **** /* USER CODE BEGIN 5 */
+ 125:LWIP/App/lwip.c **** /* USER CODE END 5 */
+ 126:LWIP/App/lwip.c ****   }
+  34              		.loc 1 126 3 view .LVU2
+ 127:LWIP/App/lwip.c ****   else /* netif is down */
+ 128:LWIP/App/lwip.c ****   {
+ 129:LWIP/App/lwip.c **** /* USER CODE BEGIN 6 */
+ 130:LWIP/App/lwip.c **** /* USER CODE END 6 */
+ 131:LWIP/App/lwip.c ****   }
+  35              		.loc 1 131 3 view .LVU3
+ 132:LWIP/App/lwip.c **** }
+  36              		.loc 1 132 1 is_stmt 0 view .LVU4
+  37 0000 7047     		bx	lr
+  38              		.cfi_endproc
+  39              	.LFE176:
+  41              		.section	.text.MX_LWIP_Init,"ax",%progbits
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 4
+
+
+  42              		.align	1
+  43              		.global	MX_LWIP_Init
+  44              		.syntax unified
+  45              		.thumb
+  46              		.thumb_func
+  48              	MX_LWIP_Init:
+  49              	.LFB175:
+  59:LWIP/App/lwip.c ****   /* IP addresses initialization */
+  50              		.loc 1 59 1 is_stmt 1 view -0
+  51              		.cfi_startproc
+  52              		@ args = 0, pretend = 0, frame = 32
+  53              		@ frame_needed = 0, uses_anonymous_args = 0
+  54 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+  55              	.LCFI0:
+  56              		.cfi_def_cfa_offset 20
+  57              		.cfi_offset 4, -20
+  58              		.cfi_offset 5, -16
+  59              		.cfi_offset 6, -12
+  60              		.cfi_offset 7, -8
+  61              		.cfi_offset 14, -4
+  62 0002 8DB0     		sub	sp, sp, #52
+  63              	.LCFI1:
+  64              		.cfi_def_cfa_offset 72
+  61:LWIP/App/lwip.c ****   IP_ADDRESS[1] = 168;
+  65              		.loc 1 61 3 view .LVU6
+  61:LWIP/App/lwip.c ****   IP_ADDRESS[1] = 168;
+  66              		.loc 1 61 17 is_stmt 0 view .LVU7
+  67 0004 3F4F     		ldr	r7, .L4
+  68 0006 C020     		movs	r0, #192
+  69 0008 3870     		strb	r0, [r7]
+  62:LWIP/App/lwip.c ****   IP_ADDRESS[2] = 1;
+  70              		.loc 1 62 3 is_stmt 1 view .LVU8
+  62:LWIP/App/lwip.c ****   IP_ADDRESS[2] = 1;
+  71              		.loc 1 62 17 is_stmt 0 view .LVU9
+  72 000a A821     		movs	r1, #168
+  73 000c 7970     		strb	r1, [r7, #1]
+  63:LWIP/App/lwip.c ****   IP_ADDRESS[3] = 10;
+  74              		.loc 1 63 3 is_stmt 1 view .LVU10
+  63:LWIP/App/lwip.c ****   IP_ADDRESS[3] = 10;
+  75              		.loc 1 63 17 is_stmt 0 view .LVU11
+  76 000e 0123     		movs	r3, #1
+  77 0010 BB70     		strb	r3, [r7, #2]
+  64:LWIP/App/lwip.c ****   NETMASK_ADDRESS[0] = 255;
+  78              		.loc 1 64 3 is_stmt 1 view .LVU12
+  64:LWIP/App/lwip.c ****   NETMASK_ADDRESS[0] = 255;
+  79              		.loc 1 64 17 is_stmt 0 view .LVU13
+  80 0012 0A22     		movs	r2, #10
+  81 0014 FA70     		strb	r2, [r7, #3]
+  65:LWIP/App/lwip.c ****   NETMASK_ADDRESS[1] = 255;
+  82              		.loc 1 65 3 is_stmt 1 view .LVU14
+  65:LWIP/App/lwip.c ****   NETMASK_ADDRESS[1] = 255;
+  83              		.loc 1 65 22 is_stmt 0 view .LVU15
+  84 0016 3C4E     		ldr	r6, .L4+4
+  85 0018 FF22     		movs	r2, #255
+  86 001a 3270     		strb	r2, [r6]
+  66:LWIP/App/lwip.c ****   NETMASK_ADDRESS[2] = 255;
+  87              		.loc 1 66 3 is_stmt 1 view .LVU16
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 5
+
+
+  66:LWIP/App/lwip.c ****   NETMASK_ADDRESS[2] = 255;
+  88              		.loc 1 66 22 is_stmt 0 view .LVU17
+  89 001c 7270     		strb	r2, [r6, #1]
+  67:LWIP/App/lwip.c ****   NETMASK_ADDRESS[3] = 0;
+  90              		.loc 1 67 3 is_stmt 1 view .LVU18
+  67:LWIP/App/lwip.c ****   NETMASK_ADDRESS[3] = 0;
+  91              		.loc 1 67 22 is_stmt 0 view .LVU19
+  92 001e B270     		strb	r2, [r6, #2]
+  68:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[0] = 192;
+  93              		.loc 1 68 3 is_stmt 1 view .LVU20
+  68:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[0] = 192;
+  94              		.loc 1 68 22 is_stmt 0 view .LVU21
+  95 0020 0024     		movs	r4, #0
+  96 0022 F470     		strb	r4, [r6, #3]
+  69:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[1] = 168;
+  97              		.loc 1 69 3 is_stmt 1 view .LVU22
+  69:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[1] = 168;
+  98              		.loc 1 69 22 is_stmt 0 view .LVU23
+  99 0024 394D     		ldr	r5, .L4+8
+ 100 0026 2870     		strb	r0, [r5]
+  70:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[2] = 1;
+ 101              		.loc 1 70 3 is_stmt 1 view .LVU24
+  70:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[2] = 1;
+ 102              		.loc 1 70 22 is_stmt 0 view .LVU25
+ 103 0028 6970     		strb	r1, [r5, #1]
+  71:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[3] = 1;
+ 104              		.loc 1 71 3 is_stmt 1 view .LVU26
+  71:LWIP/App/lwip.c ****   GATEWAY_ADDRESS[3] = 1;
+ 105              		.loc 1 71 22 is_stmt 0 view .LVU27
+ 106 002a AB70     		strb	r3, [r5, #2]
+  72:LWIP/App/lwip.c **** 
+ 107              		.loc 1 72 3 is_stmt 1 view .LVU28
+  72:LWIP/App/lwip.c **** 
+ 108              		.loc 1 72 22 is_stmt 0 view .LVU29
+ 109 002c EB70     		strb	r3, [r5, #3]
+  78:LWIP/App/lwip.c **** 
+ 110              		.loc 1 78 3 is_stmt 1 view .LVU30
+ 111 002e 2146     		mov	r1, r4
+ 112 0030 2046     		mov	r0, r4
+ 113 0032 FFF7FEFF 		bl	tcpip_init
+ 114              	.LVL1:
+  81:LWIP/App/lwip.c ****   IP4_ADDR(&netmask, NETMASK_ADDRESS[0], NETMASK_ADDRESS[1] , NETMASK_ADDRESS[2], NETMASK_ADDRESS[3
+ 115              		.loc 1 81 3 view .LVU31
+ 116 0036 3A78     		ldrb	r2, [r7]	@ zero_extendqisi2
+ 117 0038 7B78     		ldrb	r3, [r7, #1]	@ zero_extendqisi2
+ 118 003a 1B04     		lsls	r3, r3, #16
+ 119 003c 43EA0263 		orr	r3, r3, r2, lsl #24
+ 120 0040 BA78     		ldrb	r2, [r7, #2]	@ zero_extendqisi2
+ 121 0042 43EA0223 		orr	r3, r3, r2, lsl #8
+ 122 0046 F978     		ldrb	r1, [r7, #3]	@ zero_extendqisi2
+ 123 0048 0B43     		orrs	r3, r3, r1
+ 124 004a 1A02     		lsls	r2, r3, #8
+ 125 004c 02F47F02 		and	r2, r2, #16711680
+ 126 0050 42EA0162 		orr	r2, r2, r1, lsl #24
+ 127 0054 190A     		lsrs	r1, r3, #8
+ 128 0056 01F47F41 		and	r1, r1, #65280
+ 129 005a 0A43     		orrs	r2, r2, r1
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 6
+
+
+ 130 005c 42EA1363 		orr	r3, r2, r3, lsr #24
+ 131 0060 2B49     		ldr	r1, .L4+12
+ 132 0062 0B60     		str	r3, [r1]
+  82:LWIP/App/lwip.c ****   IP4_ADDR(&gw, GATEWAY_ADDRESS[0], GATEWAY_ADDRESS[1], GATEWAY_ADDRESS[2], GATEWAY_ADDRESS[3]);
+ 133              		.loc 1 82 3 view .LVU32
+ 134 0064 3278     		ldrb	r2, [r6]	@ zero_extendqisi2
+ 135 0066 7378     		ldrb	r3, [r6, #1]	@ zero_extendqisi2
+ 136 0068 1B04     		lsls	r3, r3, #16
+ 137 006a 43EA0263 		orr	r3, r3, r2, lsl #24
+ 138 006e B278     		ldrb	r2, [r6, #2]	@ zero_extendqisi2
+ 139 0070 43EA0223 		orr	r3, r3, r2, lsl #8
+ 140 0074 F078     		ldrb	r0, [r6, #3]	@ zero_extendqisi2
+ 141 0076 0343     		orrs	r3, r3, r0
+ 142 0078 1A02     		lsls	r2, r3, #8
+ 143 007a 02F47F02 		and	r2, r2, #16711680
+ 144 007e 42EA0062 		orr	r2, r2, r0, lsl #24
+ 145 0082 180A     		lsrs	r0, r3, #8
+ 146 0084 00F47F40 		and	r0, r0, #65280
+ 147 0088 0243     		orrs	r2, r2, r0
+ 148 008a 42EA1363 		orr	r3, r2, r3, lsr #24
+ 149 008e 214A     		ldr	r2, .L4+16
+ 150 0090 1360     		str	r3, [r2]
+  83:LWIP/App/lwip.c **** 
+ 151              		.loc 1 83 3 view .LVU33
+ 152 0092 2878     		ldrb	r0, [r5]	@ zero_extendqisi2
+ 153 0094 6B78     		ldrb	r3, [r5, #1]	@ zero_extendqisi2
+ 154 0096 1B04     		lsls	r3, r3, #16
+ 155 0098 43EA0063 		orr	r3, r3, r0, lsl #24
+ 156 009c A878     		ldrb	r0, [r5, #2]	@ zero_extendqisi2
+ 157 009e 43EA0023 		orr	r3, r3, r0, lsl #8
+ 158 00a2 ED78     		ldrb	r5, [r5, #3]	@ zero_extendqisi2
+ 159 00a4 2B43     		orrs	r3, r3, r5
+ 160 00a6 1802     		lsls	r0, r3, #8
+ 161 00a8 00F47F00 		and	r0, r0, #16711680
+ 162 00ac 40EA0560 		orr	r0, r0, r5, lsl #24
+ 163 00b0 1D0A     		lsrs	r5, r3, #8
+ 164 00b2 05F47F45 		and	r5, r5, #65280
+ 165 00b6 2843     		orrs	r0, r0, r5
+ 166 00b8 40EA1360 		orr	r0, r0, r3, lsr #24
+ 167 00bc 164B     		ldr	r3, .L4+20
+ 168 00be 1860     		str	r0, [r3]
+  86:LWIP/App/lwip.c **** 
+ 169              		.loc 1 86 3 view .LVU34
+ 170 00c0 164E     		ldr	r6, .L4+24
+ 171 00c2 1748     		ldr	r0, .L4+28
+ 172 00c4 0290     		str	r0, [sp, #8]
+ 173 00c6 1748     		ldr	r0, .L4+32
+ 174 00c8 0190     		str	r0, [sp, #4]
+ 175 00ca 0094     		str	r4, [sp]
+ 176 00cc 3046     		mov	r0, r6
+ 177 00ce FFF7FEFF 		bl	netif_add
+ 178              	.LVL2:
+  89:LWIP/App/lwip.c **** 
+ 179              		.loc 1 89 3 view .LVU35
+ 180 00d2 3046     		mov	r0, r6
+ 181 00d4 FFF7FEFF 		bl	netif_set_default
+ 182              	.LVL3:
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 7
+
+
+  92:LWIP/App/lwip.c **** 
+ 183              		.loc 1 92 3 view .LVU36
+ 184 00d8 3046     		mov	r0, r6
+ 185 00da FFF7FEFF 		bl	netif_set_up
+ 186              	.LVL4:
+  95:LWIP/App/lwip.c **** 
+ 187              		.loc 1 95 3 view .LVU37
+ 188 00de 1249     		ldr	r1, .L4+36
+ 189 00e0 3046     		mov	r0, r6
+ 190 00e2 FFF7FEFF 		bl	netif_set_link_callback
+ 191              	.LVL5:
+  99:LWIP/App/lwip.c ****   osThreadCreate(osThread(EthLink), &gnetif);
+ 192              		.loc 1 99 3 view .LVU38
+ 193 00e6 05AC     		add	r4, sp, #20
+ 194 00e8 104D     		ldr	r5, .L4+40
+ 195 00ea 0FCD     		ldmia	r5!, {r0, r1, r2, r3}
+ 196 00ec 0FC4     		stmia	r4!, {r0, r1, r2, r3}
+ 197 00ee 95E80700 		ldm	r5, {r0, r1, r2}
+ 198 00f2 84E80700 		stm	r4, {r0, r1, r2}
+ 100:LWIP/App/lwip.c **** /* USER CODE END H7_OS_THREAD_DEF_CREATE_CMSIS_RTOS_V1 */
+ 199              		.loc 1 100 3 view .LVU39
+ 200 00f6 3146     		mov	r1, r6
+ 201 00f8 05A8     		add	r0, sp, #20
+ 202 00fa FFF7FEFF 		bl	osThreadCreate
+ 203              	.LVL6:
+ 106:LWIP/App/lwip.c **** 
+ 204              		.loc 1 106 1 is_stmt 0 view .LVU40
+ 205 00fe 0DB0     		add	sp, sp, #52
+ 206              	.LCFI2:
+ 207              		.cfi_def_cfa_offset 20
+ 208              		@ sp needed
+ 209 0100 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 210              	.L5:
+ 211 0102 00BF     		.align	2
+ 212              	.L4:
+ 213 0104 00000000 		.word	IP_ADDRESS
+ 214 0108 00000000 		.word	NETMASK_ADDRESS
+ 215 010c 00000000 		.word	GATEWAY_ADDRESS
+ 216 0110 00000000 		.word	ipaddr
+ 217 0114 00000000 		.word	netmask
+ 218 0118 00000000 		.word	gw
+ 219 011c 00000000 		.word	gnetif
+ 220 0120 00000000 		.word	tcpip_input
+ 221 0124 00000000 		.word	ethernetif_init
+ 222 0128 00000000 		.word	ethernet_link_status_updated
+ 223 012c 00000000 		.word	.LANCHOR0
+ 224              		.cfi_endproc
+ 225              	.LFE175:
+ 227              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 228              		.align	2
+ 229              	.LC0:
+ 230 0000 4574684C 		.ascii	"EthLink\000"
+ 230      696E6B00 
+ 231              		.global	GATEWAY_ADDRESS
+ 232              		.section	.bss.GATEWAY_ADDRESS,"aw",%nobits
+ 233              		.align	2
+ 236              	GATEWAY_ADDRESS:
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 8
+
+
+ 237 0000 00000000 		.space	4
+ 238              		.global	NETMASK_ADDRESS
+ 239              		.section	.bss.NETMASK_ADDRESS,"aw",%nobits
+ 240              		.align	2
+ 243              	NETMASK_ADDRESS:
+ 244 0000 00000000 		.space	4
+ 245              		.global	IP_ADDRESS
+ 246              		.section	.bss.IP_ADDRESS,"aw",%nobits
+ 247              		.align	2
+ 250              	IP_ADDRESS:
+ 251 0000 00000000 		.space	4
+ 252              		.global	gw
+ 253              		.section	.bss.gw,"aw",%nobits
+ 254              		.align	2
+ 257              	gw:
+ 258 0000 00000000 		.space	4
+ 259              		.global	netmask
+ 260              		.section	.bss.netmask,"aw",%nobits
+ 261              		.align	2
+ 264              	netmask:
+ 265 0000 00000000 		.space	4
+ 266              		.global	ipaddr
+ 267              		.section	.bss.ipaddr,"aw",%nobits
+ 268              		.align	2
+ 271              	ipaddr:
+ 272 0000 00000000 		.space	4
+ 273              		.global	gnetif
+ 274              		.section	.bss.gnetif,"aw",%nobits
+ 275              		.align	2
+ 278              	gnetif:
+ 279 0000 00000000 		.space	52
+ 279      00000000 
+ 279      00000000 
+ 279      00000000 
+ 279      00000000 
+ 280              		.section	.rodata
+ 281              		.align	2
+ 282              		.set	.LANCHOR0,. + 0
+ 283              	.LC2:
+ 284 0000 00000000 		.word	.LC0
+ 285 0004 00000000 		.word	ethernet_link_thread
+ 286 0008 FFFF     		.short	-1
+ 287 000a 0000     		.space	2
+ 288 000c 00000000 		.word	0
+ 289 0010 00040000 		.word	1024
+ 290 0014 00000000 		.word	0
+ 291 0018 00000000 		.word	0
+ 292              		.text
+ 293              	.Letext0:
+ 294              		.file 2 "/Applications/ArmGNUToolchain/14.3.rel1/arm-none-eabi/arm-none-eabi/include/machine/_defa
+ 295              		.file 3 "/Applications/ArmGNUToolchain/14.3.rel1/arm-none-eabi/arm-none-eabi/include/sys/_stdint.h
+ 296              		.file 4 "Middlewares/Third_Party/LwIP/src/include/lwip/arch.h"
+ 297              		.file 5 "Middlewares/Third_Party/LwIP/src/include/lwip/err.h"
+ 298              		.file 6 "Middlewares/Third_Party/LwIP/src/include/lwip/pbuf.h"
+ 299              		.file 7 "Middlewares/Third_Party/LwIP/src/include/lwip/ip4_addr.h"
+ 300              		.file 8 "Middlewares/Third_Party/LwIP/src/include/lwip/ip_addr.h"
+ 301              		.file 9 "Middlewares/Third_Party/LwIP/src/include/lwip/netif.h"
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 9
+
+
+ 302              		.file 10 "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h"
+ 303              		.file 11 "Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h"
+ 304              		.file 12 "Middlewares/Third_Party/FreeRTOS/Source/include/task.h"
+ 305              		.file 13 "Middlewares/Third_Party/LwIP/src/include/lwip/memp.h"
+ 306              		.file 14 "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h"
+ 307              		.file 15 "Middlewares/Third_Party/LwIP/src/include/lwip/tcpip.h"
+ 308              		.file 16 "LWIP/Target/ethernetif.h"
+ARM GAS  /var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s 			page 10
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 lwip.c
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:20     .text.ethernet_link_status_updated:00000000 $t
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:25     .text.ethernet_link_status_updated:00000000 ethernet_link_status_updated
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:42     .text.MX_LWIP_Init:00000000 $t
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:48     .text.MX_LWIP_Init:00000000 MX_LWIP_Init
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:213    .text.MX_LWIP_Init:00000104 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:250    .bss.IP_ADDRESS:00000000 IP_ADDRESS
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:243    .bss.NETMASK_ADDRESS:00000000 NETMASK_ADDRESS
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:236    .bss.GATEWAY_ADDRESS:00000000 GATEWAY_ADDRESS
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:271    .bss.ipaddr:00000000 ipaddr
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:264    .bss.netmask:00000000 netmask
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:257    .bss.gw:00000000 gw
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:278    .bss.gnetif:00000000 gnetif
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:228    .rodata.str1.4:00000000 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:233    .bss.GATEWAY_ADDRESS:00000000 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:240    .bss.NETMASK_ADDRESS:00000000 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:247    .bss.IP_ADDRESS:00000000 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:254    .bss.gw:00000000 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:261    .bss.netmask:00000000 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:268    .bss.ipaddr:00000000 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:275    .bss.gnetif:00000000 $d
+/var/folders/6z/bj4rvlwn0mvdnknwnn42jd6r0000gn/T//ccQA7kVp.s:281    .rodata:00000000 $d
+
+UNDEFINED SYMBOLS
+tcpip_init
+netif_add
+netif_set_default
+netif_set_up
+netif_set_link_callback
+osThreadCreate
+tcpip_input
+ethernetif_init
+ethernet_link_thread
