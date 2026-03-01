@@ -51,8 +51,31 @@
           "min_clearance": 0.5
         }
       },
-      "diff_pair_dimensions": [],
-      "drc_exclusions": [],
+      "diff_pair_dimensions": [
+        {
+          "gap": 0.0,
+          "via_gap": 0.0,
+          "width": 0.0
+        }
+      ],
+      "drc_exclusions": [
+        [
+          "net_conflict|214096600|54305200|ef0aaa7d-2280-4eb5-8aa5-7595b3a72295|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "net_conflict|222308200|65601200|97f9e4e8-94fa-4ea1-8384-22ba0d88c990|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "net_conflict|263118600|54279800|82bfd2c3-e1d6-4ac3-8984-3654e9eecad4|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "net_conflict|263169400|102387400|4d1f78b2-30db-4321-b71d-f7cc55e4ffbe|00000000-0000-0000-0000-000000000000",
+          ""
+        ]
+      ],
       "meta": {
         "version": 2
       },
@@ -94,15 +117,15 @@
         "padstack": "warning",
         "pth_inside_courtyard": "ignore",
         "shorting_items": "error",
-        "silk_edge_clearance": "warning",
-        "silk_over_copper": "warning",
-        "silk_overlap": "warning",
+        "silk_edge_clearance": "ignore",
+        "silk_over_copper": "ignore",
+        "silk_overlap": "ignore",
         "skew_out_of_range": "error",
         "solder_mask_bridge": "error",
         "starved_thermal": "error",
-        "text_height": "warning",
+        "text_height": "ignore",
         "text_on_edge_cuts": "error",
-        "text_thickness": "warning",
+        "text_thickness": "ignore",
         "through_hole_pad_without_hole": "error",
         "too_many_vias": "error",
         "track_angle": "error",
@@ -117,23 +140,23 @@
       },
       "rules": {
         "max_error": 0.005,
-        "min_clearance": 0.0,
+        "min_clearance": 0.127,
         "min_connection": 0.0,
-        "min_copper_edge_clearance": 0.5,
+        "min_copper_edge_clearance": 0.0,
         "min_groove_width": 0.0,
         "min_hole_clearance": 0.25,
-        "min_hole_to_hole": 0.25,
+        "min_hole_to_hole": 0.254,
         "min_microvia_diameter": 0.2,
         "min_microvia_drill": 0.1,
-        "min_resolved_spokes": 2,
-        "min_silk_clearance": 0.0,
-        "min_text_height": 0.8,
-        "min_text_thickness": 0.08,
+        "min_resolved_spokes": 0,
+        "min_silk_clearance": 0.15,
+        "min_text_height": 1.016,
+        "min_text_thickness": 0.1524,
         "min_through_hole_diameter": 0.3,
-        "min_track_width": 0.0,
-        "min_via_annular_width": 0.1,
-        "min_via_diameter": 0.5,
-        "solder_mask_to_copper_clearance": 0.0,
+        "min_track_width": 0.0889,
+        "min_via_annular_width": 0.13,
+        "min_via_diameter": 0.4,
+        "solder_mask_to_copper_clearance": 0.005,
         "use_height_for_length_calcs": true
       },
       "teardrop_options": [
@@ -180,7 +203,16 @@
           "td_width_to_size_filter_ratio": 0.9
         }
       ],
-      "track_widths": [],
+      "track_widths": [
+        0.0,
+        0.1524,
+        0.25,
+        0.3,
+        0.4,
+        0.6,
+        0.8,
+        2.0
+      ],
       "tuning_pattern_settings": {
         "diff_pair_defaults": {
           "corner_radius_percentage": 80,
@@ -207,8 +239,25 @@
           "spacing": 0.6
         }
       },
-      "via_dimensions": [],
-      "zones_allow_external_fillets": false
+      "via_dimensions": [
+        {
+          "diameter": 0.0,
+          "drill": 0.0
+        },
+        {
+          "diameter": 0.6,
+          "drill": 0.3
+        },
+        {
+          "diameter": 1.0,
+          "drill": 0.7
+        },
+        {
+          "diameter": 2.5,
+          "drill": 2.2
+        }
+      ],
+      "zones_allow_external_fillets": true
     },
     "ipc2581": {
       "dist": "",
@@ -618,12 +667,24 @@
       "Ether+RJ45"
     ],
     [
+      "6cccff7c-4955-4395-8d47-f10aaf314fa0",
+      "MCU"
+    ],
+    [
       "3ac4da95-0fbd-4259-bcfb-7fcdb5154b35",
       "CAN1"
     ],
     [
-      "6cccff7c-4955-4395-8d47-f10aaf314fa0",
-      "MCU"
+      "89f65be6-34da-4afd-9a5b-df8639f1d594",
+      "CAN2"
+    ],
+    [
+      "21675c9f-d729-4ce7-bf65-90c7a144b4d8",
+      "CAN3"
+    ],
+    [
+      "2458b9c9-0a07-4769-8224-c7a8fbcc56db",
+      "SERIAL"
     ]
   ],
   "text_variables": {}

@@ -3338,12 +3338,6 @@
 		(uuid "8d1324af-1619-4717-844b-6c8b2c26fa68")
 	)
 	(junction
-		(at 172.72 73.66)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "9cf9cbe2-8d21-44b6-a793-12c66ac1d661")
-	)
-	(junction
 		(at 80.01 54.61)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4023,16 +4017,6 @@
 	)
 	(wire
 		(pts
-			(xy 172.72 73.66) (xy 207.01 73.66)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8773e03a-8875-4ad6-bbde-8aad51e49802")
-	)
-	(wire
-		(pts
 			(xy 152.4 124.46) (xy 153.67 124.46)
 		)
 		(stroke
@@ -4113,7 +4097,7 @@
 	)
 	(wire
 		(pts
-			(xy 161.29 73.66) (xy 172.72 73.66)
+			(xy 161.29 73.66) (xy 207.01 73.66)
 		)
 		(stroke
 			(width 0)
@@ -5241,6 +5225,7 @@
 	(symbol
 		(lib_id "Device:R")
 		(at 172.72 69.85 0)
+		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5248,7 +5233,7 @@
 		(dnp no)
 		(uuid "2b524aaf-ae99-42e6-9689-f2b98d9d3112")
 		(property "Reference" "R24"
-			(at 173.482 66.04 0)
+			(at 171.958 66.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5257,7 +5242,7 @@
 			)
 		)
 		(property "Value" "49"
-			(at 173.736 71.12 0)
+			(at 171.704 71.12 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5266,7 +5251,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 170.942 69.85 90)
+			(at 174.498 69.85 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5739,7 +5724,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1k"
 			(at 205.232 135.382 0)
 			(effects
 				(font
@@ -6284,7 +6269,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1k"
 			(at 195.326 135.382 0)
 			(effects
 				(font
