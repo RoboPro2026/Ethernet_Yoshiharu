@@ -52,6 +52,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+extern volatile uint32_t systick_irq_count; /* stm32g4xx_it.c で定義 */
 wiz_NetInfo gWIZNETINFO = {
     .mac = {0x00, 0x08, 0xDC, 0x12, 0x34, 0x56},
     .ip = {192, 168, 1, 100},
@@ -74,6 +75,148 @@ void W5500_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/* -----------------------------------------------------------------------
+ * DWT サイクルカウンタによる HAL_GetTick / HAL_Delay オーバーライド
+ * SysTick 割り込み不要のため絶対にハングしない
+ * ----------------------------------------------------------------------- */
+// static void DWT_Init(void)
+// {
+//     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+//     DWT->CYCCNT = 0;
+//     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+// }
+
+// static volatile uint32_t dwt_ms_ovf = 0;
+// static volatile uint32_t dwt_last = 0;
+
+// uint32_t HAL_GetTick(void)
+// {
+//     uint32_t cyc = DWT->CYCCNT;
+//     if (cyc < dwt_last)
+//         dwt_ms_ovf++;
+//     dwt_last = cyc;
+//     uint64_t total = ((uint64_t)dwt_ms_ovf << 32) | cyc;
+//     return (uint32_t)(total / (SystemCoreClock / 1000U));
+// }
+
+// void HAL_Delay(uint32_t Delay)
+// {
+//     uint32_t start = DWT->CYCCNT;
+//     uint32_t cycles = Delay * (SystemCoreClock / 1000U);
+//     while ((DWT->CYCCNT - start) < cycles)
+//         ;
+// }
+/* ----------------------------------------------------------------------- */
+
+/**
+ * @brief  TCP Echo Server (Loopback)
+ * @param  sn: Socket number
+ * @param  buf: Data buffer
+ * @param  port: Port number
+ * @retval Received data size
+ */
+int32_t loopback_tcps(uint8_t sn, uint8_t *buf, uint16_t port)
+{
+    int32_t ret;
+    uint16_t size = 0, sentsize = 0;
+    static uint8_t last_status = 0xFF;
+    uint8_t current_status = getSn_SR(sn);
+
+    // Display status change
+    if (current_status != last_status)
+    {
+        printf("Socket status changed: 0x%02X\r\n", current_status);
+        last_status = current_status;
+    }
+
+    switch (current_status)
+    {
+    case SOCK_ESTABLISHED:
+        if (getSn_IR(sn) & Sn_IR_CON)
+        {
+            printf("Client connected!\r\n");
+            uint8_t destip[4];
+            uint16_t destport;
+            getSn_DIPR(sn, destip);
+            destport = getSn_DPORT(sn);
+            printf("Connected from: %d.%d.%d.%d:%d\r\n",
+                   destip[0], destip[1], destip[2], destip[3], destport);
+            setSn_IR(sn, Sn_IR_CON);
+        }
+
+        // Check received data size
+        if ((size = getSn_RX_RSR(sn)) > 0)
+        {
+            if (size > DATA_BUF_SIZE)
+                size = DATA_BUF_SIZE;
+            ret = recv(sn, buf, size);
+
+            if (ret <= 0)
+            {
+                printf("Receive error: %d\r\n", ret);
+                return ret;
+            }
+
+            printf("Received %d bytes: ", ret);
+            for (int i = 0; i < ret && i < 64; i++)
+            {
+                if (buf[i] >= 32 && buf[i] < 127)
+                    printf("%c", buf[i]);
+                else
+                    printf(".");
+            }
+            printf("\r\n");
+
+            // Echo back received data
+            sentsize = 0;
+            while (size != sentsize)
+            {
+                ret = send(sn, buf + sentsize, size - sentsize);
+                if (ret < 0)
+                {
+                    printf("Send error: %d\r\n", ret);
+                    close(sn);
+                    return ret;
+                }
+                sentsize += ret;
+            }
+            printf("Sent %d bytes\r\n", sentsize);
+        }
+        break;
+
+    case SOCK_CLOSE_WAIT:
+        printf("Client disconnect request\r\n");
+        if ((ret = disconnect(sn)) != SOCK_OK)
+            return ret;
+        printf("Disconnected\r\n");
+        break;
+
+    case SOCK_INIT:
+        printf("Start listening (port:%d)\r\n", port);
+        if ((ret = listen(sn)) != SOCK_OK)
+        {
+            printf("Listen failed: %d\r\n", ret);
+            return ret;
+        }
+        printf("Waiting for connection...\r\n");
+        break;
+
+    case SOCK_CLOSED:
+        printf("Create socket (port:%d)\r\n", port);
+        if ((ret = socket(sn, Sn_MR_TCP, port, 0x00)) != sn)
+        {
+            printf("Socket creation failed: %d\r\n", ret);
+            return ret;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    return 1;
+}
 
 void W5500_Init(void)
 {
@@ -223,7 +366,7 @@ int main(void)
     HAL_Init();
 
     /* USER CODE BEGIN Init */
-
+    SCB->VTOR = FLASH_BASE; /* ベクタテーブルを Flash (0x08000000) に明示設定 */
     /* USER CODE END Init */
 
     /* Configure the system clock */
@@ -245,9 +388,33 @@ int main(void)
     MX_UART5_Init();
     MX_USART1_UART_Init();
     /* USER CODE BEGIN 2 */
-    HAL_UART_Transmit(&huart1, (uint8_t *)"=== Boot ===\r\n", 14, 100);
+
     W5500_Init();
-    HAL_UART_Transmit(&huart1, (uint8_t *)"W5500 Initialization Complete\r\n", 34, 100);
+    printf("W5500 Initialization Complete\r\n");
+
+    printf("CAN Gateway Initialization Start\r\n");
+    CAN_Gateway_Init();
+
+    // FDCAN開始
+    printf("Starting FDCAN interfaces...\r\n");
+    HAL_FDCAN_Start(&hfdcan1);
+    HAL_FDCAN_Start(&hfdcan2);
+    HAL_FDCAN_Start(&hfdcan3);
+
+    // FDCAN RX割り込み有効化
+    HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+    HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+    HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+    printf("FDCAN interfaces started\r\n");
+
+    printf("\r\n========================================\r\n");
+    printf("CAN-Ethernet Gateway Ready!\r\n");
+    printf("IP: %d.%d.%d.%d\r\n",
+           gWIZNETINFO.ip[0], gWIZNETINFO.ip[1],
+           gWIZNETINFO.ip[2], gWIZNETINFO.ip[3]);
+    printf("Port: 5000\r\n");
+    printf("Channels: FDCAN1, FDCAN2, FDCAN3\r\n");
+    printf("========================================\r\n\r\n");
     /* USER CODE END 2 */
 
     /* Infinite loop */
@@ -255,7 +422,7 @@ int main(void)
     while (1)
     {
         /* USER CODE END WHILE */
-
+        CAN_Gateway_Process();
         /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */
@@ -277,11 +444,10 @@ void SystemClock_Config(void)
     /** Initializes the RCC Oscillators according to the specified parameters
      * in the RCC_OscInitTypeDef structure.
      */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-    RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
     RCC_OscInitStruct.PLL.PLLN = 20;
     RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
@@ -333,6 +499,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
         }
     }
 }
+
 /* USER CODE END 4 */
 
 /**
@@ -349,7 +516,6 @@ void Error_Handler(void)
     }
     /* USER CODE END Error_Handler_Debug */
 }
-
 #ifdef USE_FULL_ASSERT
 /**
  * @brief  Reports the name of the source file and the source line number

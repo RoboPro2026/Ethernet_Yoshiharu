@@ -97,7 +97,7 @@ uint8_t W5500_SPI_Test(void)
 
     // 簡易ループバックテスト
     W5500_Select();
-    HAL_Delay(1);
+    // HAL_Delay(1);
     W5500_WriteByte(test_data);
     W5500_Deselect();
 

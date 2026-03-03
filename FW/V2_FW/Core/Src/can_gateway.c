@@ -43,6 +43,7 @@ static struct
 static void handleClientSocket(uint8_t client_idx);
 static void sendPacketToAllClients(const can_gw_packet_t *packet);
 static bool sendCANFrame(uint8_t channel, const can_frame_gw_t *frame);
+static void printFDCANStatus(uint8_t channel);
 static void convertFDCANToGateway(const FDCAN_RxHeaderTypeDef *rx_header,
                                   const uint8_t *rx_data,
                                   can_frame_gw_t *frame);
@@ -260,11 +261,11 @@ static void handleClientSocket(uint8_t client_idx)
     static uint8_t last_status = 0xFF;
 
     // Only print critical status changes (connected/disconnected)
+    // SOCK_CLOSED / SOCK_ESTABLISHED の場合は IR を残す（各 case で使用するため）
     if (status != last_status)
     {
-        // Clear interrupts silently
         uint8_t ir = getSn_IR(sn);
-        if (ir != 0)
+        if (ir != 0 && status != SOCK_CLOSED && status != SOCK_ESTABLISHED)
         {
             setSn_IR(sn, ir);
         }
@@ -279,14 +280,6 @@ static void handleClientSocket(uint8_t client_idx)
             setSn_IR(sn, Sn_IR_CON);
             client->connected = true;
             gw_ctx.stats.active_clients++;
-
-            // Get client info
-            uint8_t destip[4];
-            uint16_t destport;
-            getSn_DIPR(sn, destip);
-            destport = getSn_DPORT(sn);
-            printf("[Client connected] IP: %d.%d.%d.%d Port: %d\r\n",
-                   destip[0], destip[1], destip[2], destip[3], destport);
         }
 
         // Check received data
@@ -304,7 +297,14 @@ static void handleClientSocket(uint8_t client_idx)
             {
                 can_gw_packet_t *packet = (can_gw_packet_t *)client->rx_buffer;
 
-                // Send to CAN
+                /* Ethernet おうむ返し（Python の recv が応答を待つため、切断を防ぐ） */
+                if (getSn_TX_FSR(sn) >= sizeof(can_gw_packet_t))
+                {
+                    // send(sn, client->rx_buffer, sizeof(can_gw_packet_t));
+                    gw_ctx.stats.eth_tx_bytes += sizeof(can_gw_packet_t);
+                }
+
+                /* CAN 送信 */
                 if (packet->channel < CAN_GW_NUM_CHANNELS)
                 {
                     if (sendCANFrame(packet->channel, &packet->frame))
@@ -314,6 +314,7 @@ static void handleClientSocket(uint8_t client_idx)
                     else
                     {
                         gw_ctx.stats.tx_errors[packet->channel]++;
+                        // printFDCANStatus(packet->channel);
                     }
                 }
 
@@ -369,6 +370,7 @@ static void handleClientSocket(uint8_t client_idx)
 
     case SOCK_SYNSENT: // 0x15 - Connection in progress
     case SOCK_SYNRECV: // 0x16 - Connection in progress
+    case 0x11:         // W5500 中間状態（接続確立前の遷移）、そのまま待機
         // Connection establishment in progress, just wait
         break;
 
@@ -388,25 +390,21 @@ static void handleClientSocket(uint8_t client_idx)
         break;
 
     case SOCK_CLOSED:
-        printf("[Socket %d] Closed, recreating on port %d\r\n", sn, CAN_GW_PORT);
-
-        // Check why socket was closed - read interrupt register before clearing
+    {
         uint8_t ir = getSn_IR(sn);
-        if (ir != 0)
-        {
-            printf("[Socket %d] Close reason IR=0x%02X", sn, ir);
-            if (ir & 0x08)
-                printf(" TIMEOUT");
-            if (ir & 0x04)
-                printf(" RECV");
-            if (ir & 0x02)
-                printf(" DISCON");
-            if (ir & 0x01)
-                printf(" CON");
-            printf("\r\n");
-            setSn_IR(sn, 0xFF); // Clear all interrupts
-        }
-
+        printf("[Socket %d] Closed IR=0x%02X (", sn, ir);
+        if (ir & 0x08)
+            printf("TIMEOUT ");
+        if (ir & 0x04)
+            printf("RECV ");
+        if (ir & 0x02)
+            printf("DISCON ");
+        if (ir & 0x01)
+            printf("CON ");
+        printf(") -> recreate\r\n");
+        setSn_IR(sn, 0xFF);
+    }
+        HAL_Delay(100); /* 再作成前に待機（DISCON の連鎖を防ぐ） */
         socket(sn, Sn_MR_TCP, CAN_GW_PORT, 0x00);
         break;
 
@@ -493,6 +491,25 @@ static void sendPacketToAllClients(const can_gw_packet_t *packet)
         }
     }
     // else: Socket not ESTABLISHED, skip silently (normal when no client connected)
+}
+
+/* TX失敗時のFDCAN状態をUARTに出力（LEC, BO, EP, EW） */
+static void printFDCANStatus(uint8_t channel)
+{
+    if (channel >= CAN_GW_NUM_CHANNELS)
+        return;
+    FDCAN_HandleTypeDef *h = gw_ctx.hfdcan[channel];
+    if (!h || !h->Instance)
+        return;
+    uint32_t psr = h->Instance->PSR;
+    uint32_t lec = (psr & FDCAN_PSR_LEC) >> FDCAN_PSR_LEC_Pos;
+    const char *lec_str[] = {"NoErr", "Stuff", "Form", "ACK", "BitR", "BitD", "CRC", "NoChg"};
+    printf("[CAN TX ERR] ch=%d PSR=0x%lX LEC=%lu(%s) BO=%lu EP=%lu EW=%lu\r\n",
+           (int)channel, (unsigned long)psr, (unsigned long)lec,
+           lec < 8 ? lec_str[lec] : "?",
+           (unsigned long)((psr & FDCAN_PSR_BO) ? 1 : 0),
+           (unsigned long)((psr & FDCAN_PSR_EP) ? 1 : 0),
+           (unsigned long)((psr & FDCAN_PSR_EW) ? 1 : 0));
 }
 
 static bool sendCANFrame(uint8_t channel, const can_frame_gw_t *frame)
