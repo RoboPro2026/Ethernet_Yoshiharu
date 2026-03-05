@@ -263,6 +263,8 @@ void W5500_Init(void)
     }
     printf("Chip initialization complete\r\n");
 
+    HAL_Delay(100);
+
     // PHY Link status check
     printf("Checking PHY link status...\r\n");
     int retry = 0;
