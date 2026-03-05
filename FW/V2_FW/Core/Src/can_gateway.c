@@ -548,66 +548,16 @@ static bool sendCANFrame(uint8_t channel, const can_frame_gw_t *frame)
         tx_header.TxFrameType = FDCAN_DATA_FRAME;
     }
 
-    // CANFD or standard CAN
-    if (frame->flags != 0)
-    {
-        tx_header.FDFormat = FDCAN_FD_CAN;
-        tx_header.BitRateSwitch = (frame->flags & 0x01) ? FDCAN_BRS_ON : FDCAN_BRS_OFF;
-    }
-    else
-    {
-        tx_header.FDFormat = FDCAN_CLASSIC_CAN;
-        tx_header.BitRateSwitch = FDCAN_BRS_OFF;
-    }
+    tx_header.FDFormat      = FDCAN_CLASSIC_CAN;
+    tx_header.BitRateSwitch = FDCAN_BRS_OFF;
 
-    // Data length - convert to FDCAN DLC
-    switch (frame->len)
-    {
-    case 0:
-        tx_header.DataLength = FDCAN_DLC_BYTES_0;
-        break;
-    case 1:
-        tx_header.DataLength = FDCAN_DLC_BYTES_1;
-        break;
-    case 2:
-        tx_header.DataLength = FDCAN_DLC_BYTES_2;
-        break;
-    case 3:
-        tx_header.DataLength = FDCAN_DLC_BYTES_3;
-        break;
-    case 4:
-        tx_header.DataLength = FDCAN_DLC_BYTES_4;
-        break;
-    case 5:
-        tx_header.DataLength = FDCAN_DLC_BYTES_5;
-        break;
-    case 6:
-        tx_header.DataLength = FDCAN_DLC_BYTES_6;
-        break;
-    case 7:
-        tx_header.DataLength = FDCAN_DLC_BYTES_7;
-        break;
-    case 8:
-        tx_header.DataLength = FDCAN_DLC_BYTES_8;
-        break;
-    default:
-        // CANFD length encoding
-        if (frame->len <= 12)
-            tx_header.DataLength = FDCAN_DLC_BYTES_12;
-        else if (frame->len <= 16)
-            tx_header.DataLength = FDCAN_DLC_BYTES_16;
-        else if (frame->len <= 20)
-            tx_header.DataLength = FDCAN_DLC_BYTES_20;
-        else if (frame->len <= 24)
-            tx_header.DataLength = FDCAN_DLC_BYTES_24;
-        else if (frame->len <= 32)
-            tx_header.DataLength = FDCAN_DLC_BYTES_32;
-        else if (frame->len <= 48)
-            tx_header.DataLength = FDCAN_DLC_BYTES_48;
-        else
-            tx_header.DataLength = FDCAN_DLC_BYTES_64;
-        break;
-    }
+    // Data length (Classic CAN: 0-8 bytes)
+    static const uint32_t dlc_table[9] = {
+        FDCAN_DLC_BYTES_0, FDCAN_DLC_BYTES_1, FDCAN_DLC_BYTES_2, FDCAN_DLC_BYTES_3,
+        FDCAN_DLC_BYTES_4, FDCAN_DLC_BYTES_5, FDCAN_DLC_BYTES_6, FDCAN_DLC_BYTES_7,
+        FDCAN_DLC_BYTES_8,
+    };
+    tx_header.DataLength = dlc_table[(frame->len <= 8) ? frame->len : 8];
 
     tx_header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
     tx_header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
@@ -645,60 +595,19 @@ static void convertFDCANToGateway(const FDCAN_RxHeaderTypeDef *rx_header,
         frame->can_id |= 0x40000000; // RTR flag
     }
 
-    // Data length - convert FDCAN DLC to actual byte count
+    // Data length (Classic CAN DLC: 0-8 bytes)
+    // FDCAN_DLC_BYTES_N = (N << 16), upper nibble of (DataLength >> 16) gives N for 0-8
     switch (rx_header->DataLength)
     {
-    case FDCAN_DLC_BYTES_0:
-        frame->len = 0;
-        break;
-    case FDCAN_DLC_BYTES_1:
-        frame->len = 1;
-        break;
-    case FDCAN_DLC_BYTES_2:
-        frame->len = 2;
-        break;
-    case FDCAN_DLC_BYTES_3:
-        frame->len = 3;
-        break;
-    case FDCAN_DLC_BYTES_4:
-        frame->len = 4;
-        break;
-    case FDCAN_DLC_BYTES_5:
-        frame->len = 5;
-        break;
-    case FDCAN_DLC_BYTES_6:
-        frame->len = 6;
-        break;
-    case FDCAN_DLC_BYTES_7:
-        frame->len = 7;
-        break;
-    case FDCAN_DLC_BYTES_8:
-        frame->len = 8;
-        break;
-    case FDCAN_DLC_BYTES_12:
-        frame->len = 12;
-        break;
-    case FDCAN_DLC_BYTES_16:
-        frame->len = 16;
-        break;
-    case FDCAN_DLC_BYTES_20:
-        frame->len = 20;
-        break;
-    case FDCAN_DLC_BYTES_24:
-        frame->len = 24;
-        break;
-    case FDCAN_DLC_BYTES_32:
-        frame->len = 32;
-        break;
-    case FDCAN_DLC_BYTES_48:
-        frame->len = 48;
-        break;
-    case FDCAN_DLC_BYTES_64:
-        frame->len = 64;
-        break;
-    default:
-        frame->len = 0;
-        break;
+    case FDCAN_DLC_BYTES_0: frame->len = 0; break;
+    case FDCAN_DLC_BYTES_1: frame->len = 1; break;
+    case FDCAN_DLC_BYTES_2: frame->len = 2; break;
+    case FDCAN_DLC_BYTES_3: frame->len = 3; break;
+    case FDCAN_DLC_BYTES_4: frame->len = 4; break;
+    case FDCAN_DLC_BYTES_5: frame->len = 5; break;
+    case FDCAN_DLC_BYTES_6: frame->len = 6; break;
+    case FDCAN_DLC_BYTES_7: frame->len = 7; break;
+    default:                frame->len = 8; break; // 8 bytes以上はすべて8として扱う
     }
 
     // Copy data
@@ -706,21 +615,4 @@ static void convertFDCANToGateway(const FDCAN_RxHeaderTypeDef *rx_header,
     {
         memcpy(frame->data, rx_data, frame->len);
     }
-
-    // Flags
-    frame->flags = 0;
-    if (rx_header->FDFormat == FDCAN_FD_CAN)
-    {
-        if (rx_header->BitRateSwitch == FDCAN_BRS_ON)
-        {
-            frame->flags |= 0x01; // BRS
-        }
-        if (rx_header->ErrorStateIndicator == FDCAN_ESI_PASSIVE)
-        {
-            frame->flags |= 0x02; // ESI
-        }
-    }
-
-    // Data
-    memcpy(frame->data, rx_data, frame->len);
 }

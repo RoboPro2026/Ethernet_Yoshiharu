@@ -24,23 +24,23 @@ extern "C"
 #define CAN_GW_NUM_CHANNELS 3   // FDCAN1, FDCAN2, FDCAN3
 #define CAN_GW_QUEUE_SIZE 64    // CAN message queue size (must be power of 2)
 
-    // CAN frame structure (SocketCAN compatible)
+    // CAN frame structure (Classic CAN, 8 bytes max)
     typedef struct
     {
-        uint32_t can_id;  // CAN ID + flags (EFF/RTR/ERR)
-        uint8_t len;      // Data length (0-8 for CAN, 0-64 for CANFD)
-        uint8_t flags;    // CANFD flags (BRS, ESI)
-        uint8_t __res0;   // Reserved
-        uint8_t __res1;   // Reserved
-        uint8_t data[64]; // Data
+        uint32_t can_id; // CAN ID + flags (bit31=EFF, bit30=RTR)
+        uint8_t  len;    // Data length (0-8)
+        uint8_t  __res0; // Reserved
+        uint8_t  __res1; // Reserved
+        uint8_t  __res2; // Reserved
+        uint8_t  data[8]; // Data (Classic CAN max 8 bytes)
     } __attribute__((packed)) can_frame_gw_t;
 
-    // Gateway packet structure
+    // Gateway packet structure  (total 20 bytes)
     typedef struct
     {
         uint8_t channel;      // CAN channel (0=FDCAN1, 1=FDCAN2, 2=FDCAN3)
         uint8_t reserved[3];  // Alignment
-        can_frame_gw_t frame; // CAN frame
+        can_frame_gw_t frame; // CAN frame (16 bytes)
     } __attribute__((packed)) can_gw_packet_t;
 
     // Gateway statistics

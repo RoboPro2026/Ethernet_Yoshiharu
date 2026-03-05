@@ -16,34 +16,34 @@ import sys
 import signal
 
 class CANFrame:
-    """SocketCAN互換のCANフレーム"""
+    """Classic CAN フレーム (最大 8 bytes)"""
+    FRAME_SIZE = 16  # can_id(4) + len(1) + res(3) + data(8)
+
     def __init__(self, can_id=0, data=b'', flags=0):
         self.can_id = can_id
-        self.data = data[:64]  # 最大64バイト
+        self.data = data[:8]   # Classic CAN: 最大 8 bytes
         self.len = len(self.data)
-        self.flags = flags
+        self.flags = flags     # 互換性のために残すが使用しない
     
     def pack(self):
-        """バイナリパケットに変換"""
-        # can_id (4), len (1), flags (1), res0 (1), res1 (1), data (64)
-        packed_data = self.data + b'\x00' * (64 - len(self.data))
-        return struct.pack('<I B B B B 64s', 
-                          self.can_id, 
-                          self.len, 
-                          self.flags, 
-                          0, 0,  # reserved
+        """バイナリパケットに変換 (16 bytes)"""
+        # can_id(4) + len(1) + res0(1) + res1(1) + res2(1) + data(8)
+        packed_data = self.data + b'\x00' * (8 - len(self.data))
+        return struct.pack('<I B B B B 8s',
+                          self.can_id,
+                          self.len,
+                          0, 0, 0,  # reserved x3
                           packed_data)
     
     @staticmethod
     def unpack(data):
         """バイナリパケットからCANフレームを復元"""
-        can_id, length, flags, _, _, packed_data = struct.unpack('<I B B B B 64s', data)
-        frame = CANFrame(can_id, packed_data[:length], flags)
+        can_id, length, _, _, _, packed_data = struct.unpack('<I B B B B 8s', data)
+        frame = CANFrame(can_id, packed_data[:length])
         return frame
     
     def __str__(self):
         data_hex = ' '.join(f'{b:02X}' for b in self.data)
-        # Check if extended ID
         is_extended = bool(self.can_id & 0x80000000)
         is_rtr = bool(self.can_id & 0x40000000)
         actual_id = self.can_id & 0x1FFFFFFF
@@ -60,9 +60,9 @@ class CANFrame:
 
 class CANGatewayPacket:
     """CAN Gateway パケット (channel情報を含む)"""
-    HEADER_SIZE = 4  # channel (1) + reserved (3)
-    FRAME_SIZE = 72  # CANフレーム
-    TOTAL_SIZE = HEADER_SIZE + FRAME_SIZE  # 76バイト
+    HEADER_SIZE = 4   # channel (1) + reserved (3)
+    FRAME_SIZE  = 16  # Classic CAN フレーム
+    TOTAL_SIZE  = HEADER_SIZE + FRAME_SIZE  # 20バイト
     
     def __init__(self, channel, frame):
         self.channel = channel  # 0=CAN1, 1=CAN2, 2=CAN3
