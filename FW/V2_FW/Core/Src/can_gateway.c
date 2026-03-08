@@ -141,7 +141,7 @@ bool CAN_Gateway_Init(void)
     // Close and setup socket 0
     close(0);
     printf("[Socket 0] Creating socket on port %d\r\n", CAN_GW_PORT);
-    if (socket(0, Sn_MR_TCP, CAN_GW_PORT, 0x00) != 0)
+    if (socket(0, Sn_MR_TCP, CAN_GW_PORT, Sn_MR_ND) != 0)
     {
         printf("ERROR: Failed to create socket 0\r\n");
         return false;
@@ -404,8 +404,8 @@ static void handleClientSocket(uint8_t client_idx)
         printf(") -> recreate\r\n");
         setSn_IR(sn, 0xFF);
     }
-        HAL_Delay(100); /* 再作成前に待機（DISCON の連鎖を防ぐ） */
-        socket(sn, Sn_MR_TCP, CAN_GW_PORT, 0x00);
+        HAL_Delay(10); /* 再作成前に待機（DISCON の連鎖を防ぐ） */
+        socket(sn, Sn_MR_TCP, CAN_GW_PORT, Sn_MR_ND);
         break;
 
     case SOCK_FIN_WAIT:  // 0x18 - Closing
@@ -548,13 +548,19 @@ static bool sendCANFrame(uint8_t channel, const can_frame_gw_t *frame)
         tx_header.TxFrameType = FDCAN_DATA_FRAME;
     }
 
-    tx_header.FDFormat      = FDCAN_CLASSIC_CAN;
+    tx_header.FDFormat = FDCAN_CLASSIC_CAN;
     tx_header.BitRateSwitch = FDCAN_BRS_OFF;
 
     // Data length (Classic CAN: 0-8 bytes)
     static const uint32_t dlc_table[9] = {
-        FDCAN_DLC_BYTES_0, FDCAN_DLC_BYTES_1, FDCAN_DLC_BYTES_2, FDCAN_DLC_BYTES_3,
-        FDCAN_DLC_BYTES_4, FDCAN_DLC_BYTES_5, FDCAN_DLC_BYTES_6, FDCAN_DLC_BYTES_7,
+        FDCAN_DLC_BYTES_0,
+        FDCAN_DLC_BYTES_1,
+        FDCAN_DLC_BYTES_2,
+        FDCAN_DLC_BYTES_3,
+        FDCAN_DLC_BYTES_4,
+        FDCAN_DLC_BYTES_5,
+        FDCAN_DLC_BYTES_6,
+        FDCAN_DLC_BYTES_7,
         FDCAN_DLC_BYTES_8,
     };
     tx_header.DataLength = dlc_table[(frame->len <= 8) ? frame->len : 8];
@@ -599,15 +605,33 @@ static void convertFDCANToGateway(const FDCAN_RxHeaderTypeDef *rx_header,
     // FDCAN_DLC_BYTES_N = (N << 16), upper nibble of (DataLength >> 16) gives N for 0-8
     switch (rx_header->DataLength)
     {
-    case FDCAN_DLC_BYTES_0: frame->len = 0; break;
-    case FDCAN_DLC_BYTES_1: frame->len = 1; break;
-    case FDCAN_DLC_BYTES_2: frame->len = 2; break;
-    case FDCAN_DLC_BYTES_3: frame->len = 3; break;
-    case FDCAN_DLC_BYTES_4: frame->len = 4; break;
-    case FDCAN_DLC_BYTES_5: frame->len = 5; break;
-    case FDCAN_DLC_BYTES_6: frame->len = 6; break;
-    case FDCAN_DLC_BYTES_7: frame->len = 7; break;
-    default:                frame->len = 8; break; // 8 bytes以上はすべて8として扱う
+    case FDCAN_DLC_BYTES_0:
+        frame->len = 0;
+        break;
+    case FDCAN_DLC_BYTES_1:
+        frame->len = 1;
+        break;
+    case FDCAN_DLC_BYTES_2:
+        frame->len = 2;
+        break;
+    case FDCAN_DLC_BYTES_3:
+        frame->len = 3;
+        break;
+    case FDCAN_DLC_BYTES_4:
+        frame->len = 4;
+        break;
+    case FDCAN_DLC_BYTES_5:
+        frame->len = 5;
+        break;
+    case FDCAN_DLC_BYTES_6:
+        frame->len = 6;
+        break;
+    case FDCAN_DLC_BYTES_7:
+        frame->len = 7;
+        break;
+    default:
+        frame->len = 8;
+        break; // 8 bytes以上はすべて8として扱う
     }
 
     // Copy data

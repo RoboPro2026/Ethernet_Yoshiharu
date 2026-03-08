@@ -295,6 +295,10 @@ void W5500_Init(void)
     printf("Configuring network...\r\n");
     ctlnetwork(CN_SET_NETINFO, (void *)&gWIZNETINFO);
 
+    // TCP retry: RCR=1 (1 retry), RTR=100 (10ms timeout per retry)
+    setRCR(1);
+    setRTR(100);
+
     // Verify configuration
     wiz_NetInfo tmp_info;
     ctlnetwork(CN_GET_NETINFO, (void *)&tmp_info);
