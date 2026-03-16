@@ -41,9 +41,7 @@ static struct
 
 // Forward declarations
 static void handleClientSocket(uint8_t client_idx);
-static void sendPacketToAllClients(const can_gw_packet_t *packet);
 static bool sendCANFrame(uint8_t channel, const can_frame_gw_t *frame);
-static void printFDCANStatus(uint8_t channel);
 static void convertFDCANToGateway(const FDCAN_RxHeaderTypeDef *rx_header,
                                   const uint8_t *rx_data,
                                   can_frame_gw_t *frame);
@@ -172,27 +170,46 @@ void CAN_Gateway_Process(void)
         return;
     }
 
-    // Process queued CAN messages (send to Ethernet)
-    while (gw_ctx.queue_tail != gw_ctx.queue_head)
+    // ETH→CAN 優先: ETH ポーリングを先に行う
+    handleClientSocket(0);
+
+    // CAN→ETH: 最大 CAN_GW_BATCH_SIZE フレームをまとめて 1 回の send() で送信
+    static uint8_t batch[CAN_GW_BATCH_SIZE * sizeof(can_gw_packet_t)];
+    uint16_t batch_len   = 0;
+    uint8_t  batch_count = 0;
+
+    while (gw_ctx.queue_tail != gw_ctx.queue_head && batch_count < CAN_GW_BATCH_SIZE)
     {
-        // Get message from queue
-        can_queue_entry_t *entry = &gw_ctx.queue[gw_ctx.queue_tail];
+        can_queue_entry_t *entry  = &gw_ctx.queue[gw_ctx.queue_tail];
+        can_gw_packet_t   *packet = (can_gw_packet_t *)(batch + batch_len);
 
-        // Convert to gateway packet
-        can_gw_packet_t packet;
-        memset(&packet, 0, sizeof(packet));
-        packet.channel = entry->channel;
-        convertFDCANToGateway(&entry->rx_header, entry->rx_data, &packet.frame);
+        memset(packet, 0, sizeof(can_gw_packet_t));
+        packet->channel = entry->channel;
+        convertFDCANToGateway(&entry->rx_header, entry->rx_data, &packet->frame);
 
-        // Send to all connected clients
-        sendPacketToAllClients(&packet);
-
-        // Update tail (move to next message)
+        batch_len += sizeof(can_gw_packet_t);
+        batch_count++;
+        gw_ctx.stats.rx_frames[entry->channel]++;
         gw_ctx.queue_tail = (gw_ctx.queue_tail + 1) & (CAN_GW_QUEUE_SIZE - 1);
     }
 
-    // Process socket 0 (single client support)
-    handleClientSocket(0);
+    if (batch_count > 0)
+    {
+        uint8_t sn = 0;
+        if (getSn_SR(sn) == SOCK_ESTABLISHED)
+        {
+            uint16_t free_size = getSn_TX_FSR(sn);
+            if (free_size >= batch_len)
+            {
+                send(sn, batch, batch_len);
+                gw_ctx.stats.eth_tx_bytes += batch_len;
+            }
+            else
+            {
+                printf("[Gateway] TX buffer full (free=%d, need=%d), skipping\r\n", free_size, batch_len);
+            }
+        }
+    }
 }
 
 void CAN_Gateway_OnCANReceived(uint8_t channel, const FDCAN_RxHeaderTypeDef *rx_header, const uint8_t *rx_data)
@@ -437,73 +454,6 @@ static void handleClientSocket(uint8_t client_idx)
         }
         break;
     }
-}
-
-static void sendPacketToAllClients(const can_gw_packet_t *packet)
-{
-    // Only support socket 0 for now (single client)
-    can_gw_client_t *client = &gw_ctx.clients[0];
-    uint8_t sn = 0;
-
-    // Always check socket status to determine if we should send
-    uint8_t sock_status = getSn_SR(sn);
-
-    // Only send if socket is in ESTABLISHED state
-    if (sock_status == SOCK_ESTABLISHED)
-    {
-        // Check TX buffer free size before sending
-        uint16_t free_size = getSn_TX_FSR(sn);
-        uint16_t packet_size = sizeof(can_gw_packet_t);
-
-        if (free_size < packet_size)
-        {
-            // TX buffer is full, skip this message
-            printf("[Gateway] TX buffer full (free=%d, need=%d), skipping\r\n", free_size, packet_size);
-            return;
-        }
-
-        int32_t ret = send(sn, (uint8_t *)packet, packet_size);
-
-        if (ret > 0)
-        {
-            gw_ctx.stats.eth_tx_bytes += ret;
-            // Success - no logging to reduce UART overhead
-        }
-        else if (ret < 0)
-        {
-            // Error occurred
-            printf("[Gateway] Send ERROR: ret=%ld status=0x%02X free=%d\r\n",
-                   ret, sock_status, free_size);
-
-            // Check if socket is still valid
-            uint8_t new_status = getSn_SR(sn);
-            if (new_status != sock_status)
-            {
-                printf("[Gateway] Socket status changed after send: 0x%02X -> 0x%02X\r\n",
-                       sock_status, new_status);
-            }
-        }
-    }
-    // else: Socket not ESTABLISHED, skip silently (normal when no client connected)
-}
-
-/* TX失敗時のFDCAN状態をUARTに出力（LEC, BO, EP, EW） */
-static void printFDCANStatus(uint8_t channel)
-{
-    if (channel >= CAN_GW_NUM_CHANNELS)
-        return;
-    FDCAN_HandleTypeDef *h = gw_ctx.hfdcan[channel];
-    if (!h || !h->Instance)
-        return;
-    uint32_t psr = h->Instance->PSR;
-    uint32_t lec = (psr & FDCAN_PSR_LEC) >> FDCAN_PSR_LEC_Pos;
-    const char *lec_str[] = {"NoErr", "Stuff", "Form", "ACK", "BitR", "BitD", "CRC", "NoChg"};
-    printf("[CAN TX ERR] ch=%d PSR=0x%lX LEC=%lu(%s) BO=%lu EP=%lu EW=%lu\r\n",
-           (int)channel, (unsigned long)psr, (unsigned long)lec,
-           lec < 8 ? lec_str[lec] : "?",
-           (unsigned long)((psr & FDCAN_PSR_BO) ? 1 : 0),
-           (unsigned long)((psr & FDCAN_PSR_EP) ? 1 : 0),
-           (unsigned long)((psr & FDCAN_PSR_EW) ? 1 : 0));
 }
 
 static bool sendCANFrame(uint8_t channel, const can_frame_gw_t *frame)
