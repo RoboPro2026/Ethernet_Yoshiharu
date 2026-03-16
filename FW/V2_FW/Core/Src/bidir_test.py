@@ -152,7 +152,7 @@ def main():
     print(f'[CAN] {iface} を開く...')
     bus = can.interface.Bus(
         channel=iface,
-        interface='slcan',
+        interface='socketcan',
         bitrate=args.bitrate,
     )
     print('[CAN] 接続完了')
