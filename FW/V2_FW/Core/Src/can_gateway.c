@@ -299,40 +299,34 @@ static void handleClientSocket(uint8_t client_idx)
             gw_ctx.stats.active_clients++;
         }
 
-        // RX バッファに溜まったパケットをまとめて処理
+        // W5500 RXバッファを一括読み込みしてまとめて処理
         {
-            uint16_t size;
-            while ((size = getSn_RX_RSR(sn)) >= sizeof(can_gw_packet_t))
+            uint16_t size = getSn_RX_RSR(sn);
+            if (size >= sizeof(can_gw_packet_t))
             {
-                ret = recv(sn, client->rx_buffer, sizeof(can_gw_packet_t));
+                // パケット境界に揃えて最大限一括読み込み
+                uint16_t max_read = (CAN_GW_BUFFER_SIZE / sizeof(can_gw_packet_t))
+                                    * sizeof(can_gw_packet_t);
+                if (size > max_read) size = max_read;
+                size = (size / sizeof(can_gw_packet_t)) * sizeof(can_gw_packet_t);
 
-                if (ret == sizeof(can_gw_packet_t))
+                ret = recv(sn, client->rx_buffer, size);
+                if (ret > 0 && ((uint16_t)ret % sizeof(can_gw_packet_t)) == 0)
                 {
-                    can_gw_packet_t *packet = (can_gw_packet_t *)client->rx_buffer;
-
-                    /* CAN 送信 */
-                    if (packet->channel < CAN_GW_NUM_CHANNELS)
+                    int num_packets = ret / sizeof(can_gw_packet_t);
+                    for (int p = 0; p < num_packets; p++)
                     {
-                        if (sendCANFrame(packet->channel, &packet->frame))
+                        can_gw_packet_t *packet = (can_gw_packet_t *)(client->rx_buffer
+                                                  + p * sizeof(can_gw_packet_t));
+                        if (packet->channel < CAN_GW_NUM_CHANNELS)
                         {
-                            gw_ctx.stats.tx_frames[packet->channel]++;
-                        }
-                        else
-                        {
-                            gw_ctx.stats.tx_errors[packet->channel]++;
+                            if (sendCANFrame(packet->channel, &packet->frame))
+                                gw_ctx.stats.tx_frames[packet->channel]++;
+                            else
+                                gw_ctx.stats.tx_errors[packet->channel]++;
                         }
                     }
-
                     gw_ctx.stats.eth_rx_bytes += ret;
-                }
-                else if (ret > 0)
-                {
-                    printf("[Socket %d] WARNING: Received %ld bytes, expected %d\r\n", sn, ret, sizeof(can_gw_packet_t));
-                    break;
-                }
-                else
-                {
-                    break;
                 }
             }
         }
