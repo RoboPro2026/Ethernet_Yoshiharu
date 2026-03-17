@@ -221,7 +221,7 @@ int32_t loopback_tcps(uint8_t sn, uint8_t *buf, uint16_t port)
 void W5500_Init(void)
 {
     uint8_t tmp;
-    uint8_t memsize[2][8] = {{2, 2, 2, 2, 2, 2, 2, 2}, {2, 2, 2, 2, 2, 2, 2, 2}};
+    uint8_t memsize[2][8] = {{8, 1, 1, 1, 1, 1, 1, 1}, {8, 1, 1, 1, 1, 1, 1, 1}};
 
     printf("\r\n=== W5500 Initialization Start ===\r\n");
 
