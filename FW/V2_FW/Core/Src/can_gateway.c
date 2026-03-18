@@ -22,7 +22,7 @@ typedef struct
 {
     uint8_t channel;
     FDCAN_RxHeaderTypeDef rx_header;
-    uint8_t rx_data[64];
+    uint8_t rx_data[8]; // Classic CAN: max 8 bytes
 } can_queue_entry_t;
 
 // Gateway context
@@ -198,16 +198,9 @@ void CAN_Gateway_Process(void)
         uint8_t sn = 0;
         if (getSn_SR(sn) == SOCK_ESTABLISHED)
         {
-            uint16_t free_size = getSn_TX_FSR(sn);
-            if (free_size >= batch_len)
-            {
-                send(sn, batch, batch_len);
-                gw_ctx.stats.eth_tx_bytes += batch_len;
-            }
-            else
-            {
-                printf("[Gateway] TX buffer full (free=%d, need=%d), skipping\r\n", free_size, batch_len);
-            }
+            // TX バッファは 8KB、バッチ最大 320 バイトなので空き確認不要
+            send(sn, batch, batch_len);
+            gw_ctx.stats.eth_tx_bytes += batch_len;
         }
     }
 }
@@ -233,12 +226,11 @@ void CAN_Gateway_OnCANReceived(uint8_t channel, const FDCAN_RxHeaderTypeDef *rx_
     can_queue_entry_t *entry = &gw_ctx.queue[gw_ctx.queue_head];
     entry->channel = channel;
     entry->rx_header = *rx_header;
-    memcpy(entry->rx_data, rx_data, 64);
+    memcpy(entry->rx_data, rx_data, 8);
 
     // Update head (atomic on Cortex-M4)
     gw_ctx.queue_head = next_head;
-
-    gw_ctx.stats.rx_frames[channel]++;
+    // rx_frames はメインループ側 (CAN_Gateway_Process) でカウント
 }
 
 can_gw_stats_t CAN_Gateway_GetStats(void)
@@ -409,7 +401,6 @@ static void handleClientSocket(uint8_t client_idx)
         printf(") -> recreate\r\n");
         setSn_IR(sn, 0xFF);
     }
-        HAL_Delay(10); /* 再作成前に待機（DISCON の連鎖を防ぐ） */
         socket(sn, Sn_MR_TCP, CAN_GW_PORT, Sn_MR_ND);
         break;
 
@@ -520,7 +511,7 @@ static void convertFDCANToGateway(const FDCAN_RxHeaderTypeDef *rx_header,
                                   const uint8_t *rx_data,
                                   can_frame_gw_t *frame)
 {
-    memset(frame, 0, sizeof(can_frame_gw_t));
+    // frame は呼び出し元の memset(packet, 0) で既にゼロクリア済み
 
     // Debug: Print raw header (disabled for performance)
     // printf("[Convert] RX: Identifier=0x%lX IdType=%lu DLC=0x%lX\r\n",
@@ -539,38 +530,8 @@ static void convertFDCANToGateway(const FDCAN_RxHeaderTypeDef *rx_header,
         frame->can_id |= 0x40000000; // RTR flag
     }
 
-    // Data length (Classic CAN DLC: 0-8 bytes)
-    // FDCAN_DLC_BYTES_N = (N << 16), upper nibble of (DataLength >> 16) gives N for 0-8
-    switch (rx_header->DataLength)
-    {
-    case FDCAN_DLC_BYTES_0:
-        frame->len = 0;
-        break;
-    case FDCAN_DLC_BYTES_1:
-        frame->len = 1;
-        break;
-    case FDCAN_DLC_BYTES_2:
-        frame->len = 2;
-        break;
-    case FDCAN_DLC_BYTES_3:
-        frame->len = 3;
-        break;
-    case FDCAN_DLC_BYTES_4:
-        frame->len = 4;
-        break;
-    case FDCAN_DLC_BYTES_5:
-        frame->len = 5;
-        break;
-    case FDCAN_DLC_BYTES_6:
-        frame->len = 6;
-        break;
-    case FDCAN_DLC_BYTES_7:
-        frame->len = 7;
-        break;
-    default:
-        frame->len = 8;
-        break; // 8 bytes以上はすべて8として扱う
-    }
+    // Data length: FDCAN_DLC_BYTES_N = N (0x00000000〜0x00000008)
+    frame->len = (rx_header->DataLength <= 8) ? (uint8_t)rx_header->DataLength : 8;
 
     // Copy data
     if (frame->len > 0)

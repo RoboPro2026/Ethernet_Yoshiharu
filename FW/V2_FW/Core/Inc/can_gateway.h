@@ -22,7 +22,7 @@ extern "C"
 #define CAN_GW_PORT 5000        // TCP port
 #define CAN_GW_BUFFER_SIZE 8192 // Buffer size per socket (socket0 = 8KB)
 #define CAN_GW_NUM_CHANNELS 3   // FDCAN1, FDCAN2, FDCAN3
-#define CAN_GW_QUEUE_SIZE 64    // CAN message queue size (must be power of 2)
+#define CAN_GW_QUEUE_SIZE 128   // CAN message queue size (must be power of 2)
 #define CAN_GW_BATCH_SIZE 16    // Max frames to batch into one TCP send()
 
     // CAN frame structure (Classic CAN, 8 bytes max)
