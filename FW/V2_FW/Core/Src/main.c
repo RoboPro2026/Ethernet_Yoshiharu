@@ -428,47 +428,6 @@ int main(void)
     while (1)
     {
         /* USER CODE END WHILE */
-
-        // PHY リンク監視 (500ms ごと)
-        static uint32_t last_link_check = 0;
-        uint32_t now = HAL_GetTick();
-        if (now - last_link_check >= 500)
-        {
-            last_link_check = now;
-            uint8_t phylink = PHY_LINK_ON;
-            ctlwizchip(CW_GET_PHYLINK, (void *)&phylink);
-            if (phylink == PHY_LINK_OFF)
-            {
-                printf("[W5500] PHY link lost! Waiting for reconnection...\r\n");
-
-                // リンク復旧待ち
-                uint32_t wait_count = 0;
-                do
-                {
-                    HAL_Delay(500);
-                    wait_count++;
-                    if (wait_count % 10 == 1)
-                    {
-                        printf("[W5500] Still waiting for PHY link... (%lus)\r\n",
-                               wait_count / 2);
-                    }
-                    ctlwizchip(CW_GET_PHYLINK, (void *)&phylink);
-                } while (phylink == PHY_LINK_OFF);
-
-                printf("[W5500] PHY link restored! Re-initializing network...\r\n");
-
-                // ネットワーク設定を再適用
-                ctlnetwork(CN_SET_NETINFO, (void *)&gWIZNETINFO);
-                setRCR(1);
-                setRTR(100);
-
-                // ソケット再作成
-                CAN_Gateway_ResetSockets();
-                last_link_check = HAL_GetTick();
-                printf("[W5500] Network recovery complete.\r\n");
-            }
-        }
-
         CAN_Gateway_Process();
         /* USER CODE BEGIN 3 */
     }
@@ -495,8 +454,8 @@ void SystemClock_Config(void)
     RCC_OscInitStruct.HSEState = RCC_HSE_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV4;
-    RCC_OscInitStruct.PLL.PLLN = 85;
+    RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
+    RCC_OscInitStruct.PLL.PLLN = 20;
     RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
     RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV4;
     RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
