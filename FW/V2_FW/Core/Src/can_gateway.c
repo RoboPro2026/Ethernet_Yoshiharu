@@ -233,6 +233,23 @@ void CAN_Gateway_OnCANReceived(uint8_t channel, const FDCAN_RxHeaderTypeDef *rx_
     // rx_frames はメインループ側 (CAN_Gateway_Process) でカウント
 }
 
+void CAN_Gateway_ResetSockets(void)
+{
+    close(0);
+    gw_ctx.clients[0].connected  = false;
+    gw_ctx.stats.active_clients  = 0;
+
+    if (socket(0, Sn_MR_TCP, CAN_GW_PORT, Sn_MR_ND) == 0)
+    {
+        listen(0);
+        printf("[Socket 0] Listening on port %d (after link recovery)\r\n", CAN_GW_PORT);
+    }
+    else
+    {
+        printf("[Socket 0] ERROR: Failed to recreate socket\r\n");
+    }
+}
+
 can_gw_stats_t CAN_Gateway_GetStats(void)
 {
     return gw_ctx.stats;

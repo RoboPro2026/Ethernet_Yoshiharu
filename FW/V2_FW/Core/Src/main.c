@@ -221,7 +221,7 @@ int32_t loopback_tcps(uint8_t sn, uint8_t *buf, uint16_t port)
 void W5500_Init(void)
 {
     uint8_t tmp;
-    uint8_t memsize[2][8] = {{8, 1, 1, 1, 1, 1, 1, 1}, {8, 1, 1, 1, 1, 1, 1, 1}};
+    uint8_t memsize[2][8] = {{16, 0, 0, 0, 0, 0, 0, 0}, {16, 0, 0, 0, 0, 0, 0, 0}};
 
     printf("\r\n=== W5500 Initialization Start ===\r\n");
 
@@ -265,30 +265,30 @@ void W5500_Init(void)
 
     HAL_Delay(100);
 
-    // PHY Link status check
+    // PHY Link status check (wait indefinitely)
     printf("Checking PHY link status...\r\n");
-    int retry = 0;
-    do
     {
-        if (ctlwizchip(CW_GET_PHYLINK, (void *)&tmp) == -1)
+        uint32_t retry = 0;
+        do
         {
-            printf("ERROR: Failed to get PHY link status\r\n");
-            while (1)
-                ;
-        }
-        if (tmp == PHY_LINK_OFF)
-        {
-            printf("No PHY link (retry %d)...\r\n", ++retry);
-            HAL_Delay(500);
-        }
-        if (retry > 20)
-        {
-            printf("ERROR: PHY link timeout\r\n");
-            printf("Please check if Ethernet cable is connected\r\n");
-            while (1)
-                ;
-        }
-    } while (tmp == PHY_LINK_OFF);
+            if (ctlwizchip(CW_GET_PHYLINK, (void *)&tmp) == -1)
+            {
+                printf("ERROR: Failed to get PHY link status\r\n");
+                HAL_Delay(500);
+                continue;
+            }
+            if (tmp == PHY_LINK_OFF)
+            {
+                retry++;
+                if (retry % 10 == 1) // 5秒ごとにメッセージ表示
+                {
+                    printf("Waiting for PHY link... (%lus elapsed)\r\n",
+                           retry / 2);
+                }
+                HAL_Delay(500);
+            }
+        } while (tmp == PHY_LINK_OFF);
+    }
     printf("PHY link established!\r\n");
 
     // Network configuration
@@ -428,6 +428,47 @@ int main(void)
     while (1)
     {
         /* USER CODE END WHILE */
+
+        // PHY リンク監視 (500ms ごと)
+        static uint32_t last_link_check = 0;
+        uint32_t now = HAL_GetTick();
+        if (now - last_link_check >= 500)
+        {
+            last_link_check = now;
+            uint8_t phylink = PHY_LINK_ON;
+            ctlwizchip(CW_GET_PHYLINK, (void *)&phylink);
+            if (phylink == PHY_LINK_OFF)
+            {
+                printf("[W5500] PHY link lost! Waiting for reconnection...\r\n");
+
+                // リンク復旧待ち
+                uint32_t wait_count = 0;
+                do
+                {
+                    HAL_Delay(500);
+                    wait_count++;
+                    if (wait_count % 10 == 1)
+                    {
+                        printf("[W5500] Still waiting for PHY link... (%lus)\r\n",
+                               wait_count / 2);
+                    }
+                    ctlwizchip(CW_GET_PHYLINK, (void *)&phylink);
+                } while (phylink == PHY_LINK_OFF);
+
+                printf("[W5500] PHY link restored! Re-initializing network...\r\n");
+
+                // ネットワーク設定を再適用
+                ctlnetwork(CN_SET_NETINFO, (void *)&gWIZNETINFO);
+                setRCR(1);
+                setRTR(100);
+
+                // ソケット再作成
+                CAN_Gateway_ResetSockets();
+                last_link_check = HAL_GetTick();
+                printf("[W5500] Network recovery complete.\r\n");
+            }
+        }
+
         CAN_Gateway_Process();
         /* USER CODE BEGIN 3 */
     }

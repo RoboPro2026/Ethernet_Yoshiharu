@@ -18,12 +18,12 @@ extern "C"
 #include <stdbool.h>
 
 // Gateway configuration
-#define CAN_GW_MAX_CLIENTS 8    // Maximum concurrent clients
-#define CAN_GW_PORT 5000        // TCP port
-#define CAN_GW_BUFFER_SIZE 8192 // Buffer size per socket (socket0 = 8KB)
-#define CAN_GW_NUM_CHANNELS 3   // FDCAN1, FDCAN2, FDCAN3
-#define CAN_GW_QUEUE_SIZE 128   // CAN message queue size (must be power of 2)
-#define CAN_GW_BATCH_SIZE 16    // Max frames to batch into one TCP send()
+#define CAN_GW_MAX_CLIENTS  1    // Maximum concurrent clients (single socket)
+#define CAN_GW_PORT         5000 // TCP port
+#define CAN_GW_BUFFER_SIZE  16384 // RX buffer per socket (matches W5500 16KB allocation)
+#define CAN_GW_NUM_CHANNELS 3    // FDCAN1, FDCAN2, FDCAN3
+#define CAN_GW_QUEUE_SIZE   128  // CAN message queue size (must be power of 2)
+#define CAN_GW_BATCH_SIZE   16   // Max frames to batch into one TCP send()
 
     // CAN frame structure (Classic CAN, 8 bytes max)
     typedef struct
@@ -75,6 +75,11 @@ extern "C"
      * @note This function is interrupt-safe and does not access W5500
      */
     void CAN_Gateway_OnCANReceived(uint8_t channel, const FDCAN_RxHeaderTypeDef *rx_header, const uint8_t *rx_data);
+
+    /**
+     * @brief Re-create TCP sockets after link recovery (does not touch FDCAN)
+     */
+    void CAN_Gateway_ResetSockets(void);
 
     /**
      * @brief Get gateway statistics
