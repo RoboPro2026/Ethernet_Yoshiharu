@@ -25,6 +25,14 @@ typedef struct
     uint8_t rx_data[8]; // Classic CAN: max 8 bytes
 } can_queue_entry_t;
 
+// ETH→CAN software TX queue (per channel, main loop only)
+typedef struct
+{
+    can_frame_gw_t frames[CAN_ETH_TX_QUEUE_SIZE];
+    uint16_t head; // write index
+    uint16_t tail; // read index
+} can_eth_tx_queue_t;
+
 // Gateway context
 static struct
 {
@@ -37,6 +45,9 @@ static struct
     can_queue_entry_t queue[CAN_GW_QUEUE_SIZE];
     volatile uint32_t queue_head; // Write index (used by interrupt)
     volatile uint32_t queue_tail; // Read index (used by main loop)
+
+    // ETH→CAN TX queue per channel (absorbs FDCAN TX FIFO full)
+    can_eth_tx_queue_t eth_tx_queue[CAN_GW_NUM_CHANNELS];
 } gw_ctx;
 
 // Forward declarations
@@ -170,8 +181,26 @@ void CAN_Gateway_Process(void)
         return;
     }
 
-    // ETH→CAN 優先: ETH ポーリングを先に行う
+    // ETH→CAN 優先: ETH ポーリングを先に行う（パケットはソフトウェアキューに積まれる）
     handleClientSocket(0);
+
+    // ETH→CAN TX キュードレイン: FDCAN TX FIFO に空きがある限り送信
+    for (uint8_t ch = 0; ch < CAN_GW_NUM_CHANNELS; ch++)
+    {
+        can_eth_tx_queue_t *q = &gw_ctx.eth_tx_queue[ch];
+        while (q->tail != q->head)
+        {
+            if (HAL_FDCAN_GetTxFifoFreeLevel(gw_ctx.hfdcan[ch]) == 0)
+            {
+                break; // TX FIFO 満杯 → 次ループで再試行
+            }
+            if (sendCANFrame(ch, &q->frames[q->tail]))
+                gw_ctx.stats.tx_frames[ch]++;
+            else
+                gw_ctx.stats.tx_errors[ch]++;
+            q->tail = (q->tail + 1) & (CAN_ETH_TX_QUEUE_SIZE - 1);
+        }
+    }
 
     // CAN→ETH: 最大 CAN_GW_BATCH_SIZE フレームをまとめて 1 回の send() で送信
     static uint8_t batch[CAN_GW_BATCH_SIZE * sizeof(can_gw_packet_t)];
@@ -327,12 +356,20 @@ static void handleClientSocket(uint8_t client_idx)
                     {
                         can_gw_packet_t *packet = (can_gw_packet_t *)(client->rx_buffer
                                                   + p * sizeof(can_gw_packet_t));
-                        if (packet->channel < CAN_GW_NUM_CHANNELS)
+                        uint8_t ch = packet->channel;
+                        if (ch >= CAN_GW_NUM_CHANNELS) continue;
+
+                        // FDCAN TX FIFO が満杯でもロスしないようソフトウェアキューに積む
+                        can_eth_tx_queue_t *q = &gw_ctx.eth_tx_queue[ch];
+                        uint16_t next_head    = (q->head + 1) & (CAN_ETH_TX_QUEUE_SIZE - 1);
+                        if (next_head != q->tail)
                         {
-                            if (sendCANFrame(packet->channel, &packet->frame))
-                                gw_ctx.stats.tx_frames[packet->channel]++;
-                            else
-                                gw_ctx.stats.tx_errors[packet->channel]++;
+                            q->frames[q->head] = packet->frame;
+                            q->head            = next_head;
+                        }
+                        else
+                        {
+                            gw_ctx.stats.tx_errors[ch]++; // ソフトウェアキュー満杯
                         }
                     }
                     gw_ctx.stats.eth_rx_bytes += ret;
