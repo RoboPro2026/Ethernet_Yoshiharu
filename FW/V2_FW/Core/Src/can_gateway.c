@@ -43,8 +43,9 @@ static struct
 
     // CAN RX queue (circular buffer, interrupt-safe)
     can_queue_entry_t queue[CAN_GW_QUEUE_SIZE];
-    volatile uint32_t queue_head; // Write index (used by interrupt)
-    volatile uint32_t queue_tail; // Read index (used by main loop)
+    volatile uint32_t queue_head;       // Write index (used by interrupt)
+    volatile uint32_t queue_tail;       // Read index (used by main loop)
+    volatile uint8_t  can_rx_overflow;  // Flag: set by ISR, cleared by main loop
 
     // ETH→CAN TX queue per channel (absorbs FDCAN TX FIFO full)
     can_eth_tx_queue_t eth_tx_queue[CAN_GW_NUM_CHANNELS];
@@ -181,6 +182,13 @@ void CAN_Gateway_Process(void)
         return;
     }
 
+    // CAN RX キュー溢れ検知（ISR がフラグを立てる、main loop で出力）
+    if (gw_ctx.can_rx_overflow)
+    {
+        gw_ctx.can_rx_overflow = 0;
+        printf("[GW] CAN->ETH SW queue FULL! frame dropped\r\n");
+    }
+
     // ETH→CAN 優先: ETH ポーリングを先に行う（パケットはソフトウェアキューに積まれる）
     handleClientSocket(0);
 
@@ -247,7 +255,7 @@ void CAN_Gateway_OnCANReceived(uint8_t channel, const FDCAN_RxHeaderTypeDef *rx_
     // Check if queue is full
     if (next_head == gw_ctx.queue_tail)
     {
-        // Queue full, drop packet (could increment error counter here)
+        gw_ctx.can_rx_overflow = 1; // メインループで printf させる
         return;
     }
 
@@ -369,7 +377,8 @@ static void handleClientSocket(uint8_t client_idx)
                         }
                         else
                         {
-                            gw_ctx.stats.tx_errors[ch]++; // ソフトウェアキュー満杯
+                            gw_ctx.stats.tx_errors[ch]++;
+                            printf("[GW] ETH->CAN SW queue FULL! ch=%d dropped\r\n", ch);
                         }
                     }
                     gw_ctx.stats.eth_rx_bytes += ret;
